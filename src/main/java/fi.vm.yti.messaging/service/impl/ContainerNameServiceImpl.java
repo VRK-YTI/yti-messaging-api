@@ -57,8 +57,8 @@ public class ContainerNameServiceImpl implements ContainerNameService {
         final String applicationIdentifier = getApplicationByType(type);
         final Set<String> uris = new HashSet<>();
         uris.add(uri);
-        final Set<IntegrationResourceDTO> integrationResoures = integrationService.getIntegrationContainers(applicationIdentifier, uris, false);
-        integrationResoures.forEach(this::addPrefLabel);
+        final Set<IntegrationResourceDTO> integrationResources = integrationService.getIntegrationContainers(applicationIdentifier, uris, false);
+        integrationResources.forEach(this::addPrefLabel);
     }
 
     public Map<String, String> getPrefLabel(final String uri) {

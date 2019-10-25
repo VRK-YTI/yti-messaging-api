@@ -68,6 +68,7 @@ public class IntegrationServiceImpl implements IntegrationService {
         final String requestUrl = resolveContainersRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration containers from: " + requestUrl);
         final String requestBody = createContainerRequestBody(applicationIdentifier, containerUris, fetchDateRangeChanges);
+        LOG.info("Fetching integration containers request body: " + requestBody);
         final HttpEntity requestEntity = new HttpEntity<>(requestBody, createRequestHeaders());
         try {
             final ResponseEntity response = restTemplate.exchange(requestUrl, HttpMethod.POST, requestEntity, String.class);
@@ -104,6 +105,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
     private Set<IntegrationResourceDTO> parseResourcesFromResponse(final ResponseEntity response) {
         final Object responseBody = response.getBody();
+        LOG.info("Fetching integration resources: " + responseBody);
         if (responseBody != null) {
             try {
                 final ObjectMapper mapper = new ObjectMapper();
