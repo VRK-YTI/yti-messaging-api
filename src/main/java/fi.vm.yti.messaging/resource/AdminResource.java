@@ -40,7 +40,7 @@ public class AdminResource {
         @ApiResponse(responseCode = "404", description = "User not found.")
     })
     public Response sendNotifications() {
-        notificationService.sendNotifications();
+        notificationService.sendAllNotifications();
         return Response.ok().build();
     }
 

@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public interface NotificationService {
 
-    void sendNotifications();
+    void sendAllNotifications();
 
     void sendUserNotifications(final UUID userId);
 }

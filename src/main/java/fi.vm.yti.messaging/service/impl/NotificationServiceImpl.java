@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import fi.vm.yti.messaging.configuration.MessagingServiceProperties;
 import fi.vm.yti.messaging.dto.ErrorModel;
-import fi.vm.yti.messaging.dto.GroupManagementUserDTO;
 import fi.vm.yti.messaging.dto.IntegrationResourceDTO;
 import fi.vm.yti.messaging.dto.ResourceDTO;
 import fi.vm.yti.messaging.dto.UserDTO;
@@ -29,7 +28,6 @@ import fi.vm.yti.messaging.service.EmailService;
 import fi.vm.yti.messaging.service.IntegrationService;
 import fi.vm.yti.messaging.service.NotificationService;
 import fi.vm.yti.messaging.service.ResourceService;
-import fi.vm.yti.messaging.service.UserLookupService;
 import fi.vm.yti.messaging.service.UserService;
 import static fi.vm.yti.messaging.api.ApiConstants.*;
 import static fi.vm.yti.messaging.util.ApplicationUtils.*;
@@ -46,7 +44,6 @@ public class NotificationServiceImpl implements NotificationService {
     private static final String LANGUAGE_UND = "und";
 
     private final UserService userService;
-    private final UserLookupService userLookupService;
     private final ResourceService resourceService;
     private final EmailService emailService;
     private final IntegrationService integrationService;
@@ -54,13 +51,11 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Inject
     public NotificationServiceImpl(final UserService userService,
-                                   final UserLookupService userLookupService,
                                    final ResourceService resourceService,
                                    final EmailService emailService,
                                    final IntegrationService integrationService,
                                    final MessagingServiceProperties messagingServiceProperties) {
         this.userService = userService;
-        this.userLookupService = userLookupService;
         this.resourceService = resourceService;
         this.emailService = emailService;
         this.integrationService = integrationService;
@@ -69,62 +64,95 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Scheduled(cron = "0 0 0 * * *", zone = "Europe/Helsinki")
     @Transactional
-    public void sendNotifications() {
+    public void sendAllNotifications() {
         LOG.info("Sending scheduled notifications!");
-        final Map<String, UserNotificationDTO> userNotifications = new HashMap<>();
-        final Set<IntegrationResourceDTO> allUpdates = getUpdatedResourcesForAllApplications();
-        final Map<String, IntegrationResourceDTO> updatedResourcesMap = new HashMap<>();
-        allUpdates.forEach(updatedResource -> updatedResourcesMap.put(updatedResource.getUri(), updatedResource));
-        final Set<UserDTO> users = userService.findAll();
-        for (final UserDTO user : users) {
-            final String email = userLookupService.getUserEmailById(user.getId());
-            if (email != null && !email.isEmpty()) {
-                final Set<ResourceDTO> resources = user.getResources();
-                if (resources != null && !resources.isEmpty()) {
-                    final Set<IntegrationResourceDTO> codeListUdpdates = new HashSet<>();
-                    final Set<IntegrationResourceDTO> dataModelUpdates = new HashSet<>();
-                    final Set<IntegrationResourceDTO> terminologyUpdates = new HashSet<>();
-                    final Set<IntegrationResourceDTO> commentsUpdates = new HashSet<>();
-                    for (final ResourceDTO resource : resources) {
-                        final String resourceUri = resource.getUri();
-                        if (updatedResourcesMap.keySet().contains(resourceUri)) {
-                            switch (resource.getApplication()) {
-                                case APPLICATION_CODELIST:
-                                    codeListUdpdates.add(updatedResourcesMap.get(resourceUri));
-                                    break;
-                                case APPLICATION_DATAMODEL:
-                                    dataModelUpdates.add(updatedResourcesMap.get(resourceUri));
-                                    break;
-                                case APPLICATION_TERMINOLOGY:
-                                    terminologyUpdates.add(updatedResourcesMap.get(resourceUri));
-                                    break;
-                                case APPLICATION_COMMENTS:
-                                    commentsUpdates.add(updatedResourcesMap.get(resourceUri));
-                                    break;
-                                default:
-                                    LOG.info("Unknown application type: " + resource.getApplication());
-                            }
-                        }
-                    }
-                    UserNotificationDTO userNotificationDto = null;
-                    if (!codeListUdpdates.isEmpty() || !dataModelUpdates.isEmpty() || !terminologyUpdates.isEmpty()) {
-                        userNotificationDto = new UserNotificationDTO(codeListUdpdates, dataModelUpdates, terminologyUpdates, commentsUpdates);
-                    }
-                    if (userNotificationDto != null) {
-                        userNotifications.put(email, userNotificationDto);
-                    }
-                }
-            }
-        }
+        final Map<String, IntegrationResourceDTO> updatedResourcesMap = fetchAndMapUpdatedResources();
+        final Map<UUID, UserNotificationDTO> userNotifications = mapUserNotifications(updatedResourcesMap);
         sendUserNotifications(userNotifications);
     }
 
-    private void sendUserNotifications(final Map<String, UserNotificationDTO> userNotifications) {
-        userNotifications.keySet().forEach(userEmail -> {
-            final UserNotificationDTO userNotificationDto = userNotifications.get(userEmail);
-            final String message = constructMessage(userNotificationDto);
-            emailService.sendMail(userEmail, message);
+    @Transactional
+    public void sendUserNotifications(final UUID userId) {
+        final UserDTO user = userService.findById(userId);
+        if (user != null) {
+            // TODO: Optimize and check only this users resources for updates!
+            final Map<String, IntegrationResourceDTO> updatedResourcesMap = fetchAndMapUpdatedResources();
+            final UserNotificationDTO userNotification = mapUserNotificationResource(user, updatedResourcesMap);
+            if (userNotification != null) {
+                sendSingleUserNotifications(user.getId(), userNotification);
+            }
+        } else {
+            throw new NotFoundException();
+        }
+    }
+
+    private Map<String, IntegrationResourceDTO> fetchAndMapUpdatedResources() {
+        final Map<String, IntegrationResourceDTO> updatedResourcesMap = new HashMap<>();
+        final Set<IntegrationResourceDTO> allUpdates = getUpdatedResourcesForAllApplications();
+        allUpdates.forEach(updatedResource -> updatedResourcesMap.put(updatedResource.getUri(), updatedResource));
+        return updatedResourcesMap;
+    }
+
+    private Map<UUID, UserNotificationDTO> mapUserNotifications(final Map<String, IntegrationResourceDTO> updatedResourcesMap) {
+        final Map<UUID, UserNotificationDTO> userNotifications = new HashMap<>();
+        final Set<UserDTO> users = userService.findAll();
+        for (final UserDTO user : users) {
+            final UserNotificationDTO userNotificationDto = mapUserNotificationResource(user, updatedResourcesMap);
+            if (userNotificationDto != null) {
+                userNotifications.put(user.getId(), userNotificationDto);
+            }
+        }
+        return userNotifications;
+    }
+
+    private UserNotificationDTO mapUserNotificationResource(final UserDTO user,
+                                                            final Map<String, IntegrationResourceDTO> updatedResourcesMap) {
+        final Set<ResourceDTO> resources = user.getResources();
+        if (resources != null && !resources.isEmpty()) {
+            final Set<IntegrationResourceDTO> codeListUdpdates = new HashSet<>();
+            final Set<IntegrationResourceDTO> dataModelUpdates = new HashSet<>();
+            final Set<IntegrationResourceDTO> terminologyUpdates = new HashSet<>();
+            final Set<IntegrationResourceDTO> commentsUpdates = new HashSet<>();
+            for (final ResourceDTO resource : resources) {
+                final String resourceUri = resource.getUri();
+                if (updatedResourcesMap.keySet().contains(resourceUri)) {
+                    switch (resource.getApplication()) {
+                        case APPLICATION_CODELIST:
+                            codeListUdpdates.add(updatedResourcesMap.get(resourceUri));
+                            break;
+                        case APPLICATION_DATAMODEL:
+                            dataModelUpdates.add(updatedResourcesMap.get(resourceUri));
+                            break;
+                        case APPLICATION_TERMINOLOGY:
+                            terminologyUpdates.add(updatedResourcesMap.get(resourceUri));
+                            break;
+                        case APPLICATION_COMMENTS:
+                            commentsUpdates.add(updatedResourcesMap.get(resourceUri));
+                            break;
+                        default:
+                            LOG.info("Unknown application type: " + resource.getApplication());
+                    }
+                }
+            }
+            UserNotificationDTO userNotificationDto = null;
+            if (!codeListUdpdates.isEmpty() || !dataModelUpdates.isEmpty() || !terminologyUpdates.isEmpty()) {
+                userNotificationDto = new UserNotificationDTO(codeListUdpdates, dataModelUpdates, terminologyUpdates, commentsUpdates);
+            }
+            return userNotificationDto;
+        }
+        return null;
+    }
+
+    private void sendUserNotifications(final Map<UUID, UserNotificationDTO> userNotifications) {
+        userNotifications.keySet().forEach(userId -> {
+            sendSingleUserNotifications(userId, userNotifications.get(userId));
         });
+    }
+
+    private void sendSingleUserNotifications(final UUID userId,
+                                             final UserNotificationDTO userNotificationDto) {
+        final String message = constructMessage(userNotificationDto);
+        emailService.sendMail(userId, message);
     }
 
     private String constructMessage(final UserNotificationDTO userNotificationDto) {
@@ -371,25 +399,6 @@ public class NotificationServiceImpl implements NotificationService {
         updatedResources.addAll(getUpdatedApplicationResources(APPLICATION_TERMINOLOGY));
         updatedResources.addAll(getUpdatedApplicationResources(APPLICATION_COMMENTS));
         return updatedResources;
-    }
-
-    public void sendUserNotifications(final UUID userId) {
-        final UserDTO user = userService.findById(userId);
-        if (user != null) {
-            LOG.info("User with ID: " + userId + " found");
-            final GroupManagementUserDTO groupManagementUser = userLookupService.getUserById(userId);
-            if (groupManagementUser != null) {
-                LOG.info("User name: " + groupManagementUser.getFirstName() + " " + groupManagementUser.getLastName() + " email: " + groupManagementUser.getEmail());
-                if (user.getResources() != null) {
-                    user.getResources().forEach(resource -> LOG.info("Resource: " + resource.getUri()));
-                    LOG.info("Sending notifications for user: " + userId);
-                }
-            } else {
-                throw new NotFoundException();
-            }
-        } else {
-            throw new NotFoundException();
-        }
     }
 
     private Set<IntegrationResourceDTO> getUpdatedApplicationResources(final String applicationIdentifier) {
