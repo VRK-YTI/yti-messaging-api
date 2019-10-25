@@ -12,15 +12,6 @@ import org.springframework.validation.annotation.Validated;
 public class MessagingServiceProperties {
 
     @NotNull
-    private String host;
-
-    @NotNull
-    private String port;
-
-    @NotNull
-    private String scheme;
-
-    @NotNull
     private String contextPath;
 
     private String env;
@@ -31,30 +22,6 @@ public class MessagingServiceProperties {
 
     public void setEnv(final String env) {
         this.env = env;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public void setHost(final String host) {
-        this.host = host;
-    }
-
-    public String getPort() {
-        return port;
-    }
-
-    public void setPort(final String port) {
-        this.port = port;
-    }
-
-    public String getScheme() {
-        return scheme;
-    }
-
-    public void setScheme(final String scheme) {
-        this.scheme = scheme;
     }
 
     public String getContextPath() {

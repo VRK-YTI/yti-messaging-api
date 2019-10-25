@@ -78,7 +78,7 @@ public class NotificationServiceImpl implements NotificationService {
         final Set<UserDTO> users = userService.findAll();
         for (final UserDTO user : users) {
             final String email = userLookupService.getUserEmailById(user.getId());
-            if (email != null && email.equalsIgnoreCase("testisuperuser@localhost")) {
+            if (email != null && !email.isEmpty()) {
                 final Set<ResourceDTO> resources = user.getResources();
                 if (resources != null && !resources.isEmpty()) {
                     final Set<IntegrationResourceDTO> codeListUdpdates = new HashSet<>();
@@ -121,7 +121,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     private void sendUserNotifications(final Map<String, UserNotificationDTO> userNotifications) {
         userNotifications.keySet().forEach(userEmail -> {
-            LOG.info("User with email will be notified: " + userEmail);
             final UserNotificationDTO userNotificationDto = userNotifications.get(userEmail);
             final String message = constructMessage(userNotificationDto);
             emailService.sendMail(userEmail, message);
