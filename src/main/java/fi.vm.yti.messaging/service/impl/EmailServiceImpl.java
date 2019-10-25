@@ -11,6 +11,7 @@ import javax.mail.internet.MimeMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
@@ -24,12 +25,15 @@ public class EmailServiceImpl implements EmailService {
     private static final Logger LOG = LoggerFactory.getLogger(EmailServiceImpl.class);
     private final UserLookupService userLookupService;
     private final JavaMailSender javaMailSender;
+    private final String adminEmail;
 
     @Inject
     public EmailServiceImpl(final UserLookupService userLookupService,
-                            final JavaMailSender javaMailSender) {
+                            final JavaMailSender javaMailSender,
+                            @Value("${admin.email}") String adminEmail) {
         this.userLookupService = userLookupService;
         this.javaMailSender = javaMailSender;
+        this.adminEmail = adminEmail;
     }
 
     private static Address createAddress(final String emailAddress) {
@@ -49,11 +53,11 @@ public class EmailServiceImpl implements EmailService {
                 LOG.info("Sending email to: " + userId);
                 LOG.info("Email message: " + message);
                 final MimeMessage mail = javaMailSender.createMimeMessage();
-//                mail.setRecipient(TO, createAddress(emailAddress));
-                mail.setRecipient(TO, createAddress("antti.tohmo@gmail.com"));
-                mail.setFrom("y-alusta.tuotetiimi@vrk.fi");
+                mail.setRecipient(TO, createAddress(emailAddress));
+                mail.setFrom(createAddress(adminEmail));
+                mail.setSender(createAddress(adminEmail));
                 mail.setSubject("Yhteentoimivuusalustan päivittyneet aineistot");
-                mail.setContent(message, "text/html");
+                mail.setContent(message, "text/html; charset=UTF-8");
                 javaMailSender.send(mail);
             } else {
                 LOG.info("Not sending e-mail to a localhost user: " + emailAddress);
