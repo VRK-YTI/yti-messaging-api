@@ -23,11 +23,14 @@ public class DtoMapperServiceImpl implements DtoMapperService {
     }
 
     public ResourceDTO mapResource(final Resource resource) {
-        final ResourceDTO resourceDto = new ResourceDTO();
-        resourceDto.setUri(resource.getUri());
-        resourceDto.setApplication(resource.getApplication());
-        resourceDto.setType(resource.getType());
-        return resourceDto;
+        if (resource != null) {
+            final ResourceDTO resourceDto = new ResourceDTO();
+            resourceDto.setUri(resource.getUri());
+            resourceDto.setApplication(resource.getApplication());
+            resourceDto.setType(resource.getType());
+            return resourceDto;
+        }
+        return null;
     }
 
     public Set<UserDTO> mapUsers(final Set<User> users) {
@@ -39,10 +42,13 @@ public class DtoMapperServiceImpl implements DtoMapperService {
     }
 
     public UserDTO mapUser(final User user) {
-        final UserDTO userDto = new UserDTO();
-        userDto.setId(user.getId());
-        userDto.setSubscriptionType(user.getSubscriptionType());
-        userDto.setResources(mapResources(user.getResources()));
-        return userDto;
+        if (user != null) {
+            final UserDTO userDto = new UserDTO();
+            userDto.setId(user.getId());
+            userDto.setSubscriptionType(user.getSubscriptionType());
+            userDto.setResources(mapResources(user.getResources()));
+            return userDto;
+        }
+        return null;
     }
 }
