@@ -18,7 +18,7 @@ ADD target/yti-messaging-api.jar ${deploy_dir}/yti-messaging-api.jar
 RUN bash -c 'touch ${deploy_dir}/yti-messaging-api.jar'
 
 # Expose port
-EXPOSE 9800
+EXPOSE 9801
 
 # Set default command on run
 ENTRYPOINT ["/bootstrap.sh", "yti-messasing-api.jar"]
