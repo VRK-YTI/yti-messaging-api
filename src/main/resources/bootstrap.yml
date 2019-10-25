@@ -1,0 +1,7 @@
+spring:
+  cloud:
+    config:
+      failFast: false
+      uri: ${config_server_uri:file:../yti-compose/config/yti-messaging-api.yml}
+  application:
+    name: yti-messaging-api
