@@ -275,7 +275,7 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <version>${spotify-docker.version}</version>
                 <configuration>
-                    <imageName>yti-comments-api</imageName>
+                    <imageName>yti-messaging-api</imageName>
                     <dockerDirectory>docker</dockerDirectory>
                     <pullOnBuild>false</pullOnBuild>
                     <resources>
@@ -401,7 +401,7 @@
         <apache.httpclient.version>4.5.10</apache.httpclient.version>
         <psql.host>localhost</psql.host>
         <psql.port>5432</psql.port>
-        <project.db.name>yti_comments</project.db.name>
+        <project.db.name>yti_messaging</project.db.name>
     </properties>
 
 </project>
