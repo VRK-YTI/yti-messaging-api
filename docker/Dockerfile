@@ -21,4 +21,4 @@ RUN bash -c 'touch ${deploy_dir}/yti-messaging-api.jar'
 EXPOSE 9801
 
 # Set default command on run
-ENTRYPOINT ["/bootstrap.sh", "yti-messasing-api.jar"]
+ENTRYPOINT ["/bootstrap.sh", "yti-messaging-api.jar"]
