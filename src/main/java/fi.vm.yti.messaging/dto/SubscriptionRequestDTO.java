@@ -1,13 +1,10 @@
 package fi.vm.yti.messaging.dto;
 
-import java.util.UUID;
-
 public class SubscriptionRequestDTO {
 
     private String action;
     private String type;
     private String uri;
-    private UUID userId;
 
     public String getType() {
         return type;
@@ -23,14 +20,6 @@ public class SubscriptionRequestDTO {
 
     public void setUri(final String uri) {
         this.uri = uri;
-    }
-
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public void setUserId(final UUID userId) {
-        this.userId = userId;
     }
 
     public String getAction() {

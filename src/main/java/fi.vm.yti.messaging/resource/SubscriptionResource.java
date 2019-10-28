@@ -1,7 +1,6 @@
 package fi.vm.yti.messaging.resource;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.ws.rs.POST;
@@ -59,34 +58,27 @@ public class SubscriptionResource {
     })
     public Response postSubscription(@Parameter(description = "Subscription request as JSON payload.") @RequestBody final String subscriptionRequest) {
         final SubscriptionRequestDTO subscriptionRequestDto = parseSubscriptionRequestDto(subscriptionRequest);
-        final UUID userId = subscriptionRequestDto.getUserId();
         final String uri = subscriptionRequestDto.getUri();
         final String type = subscriptionRequestDto.getType();
         final String action = subscriptionRequestDto.getAction();
         ResourceDTO resource = null;
         switch (action) {
             case ACTION_GET:
-                if (userId != null) {
-                    resource = subscriptionService.getSubscription(uri, userId);
-                } else if (authorizationManager.canAddSubscription()) {
+                if (authorizationManager.canAddSubscription()) {
                     resource = subscriptionService.getSubscription(uri, authorizationManager.getUserId());
                 } else {
                     throw new UnauthorizedException();
                 }
                 break;
             case ACTION_ADD:
-                if (userId != null) {
-                    resource = subscriptionService.addSubscription(uri, type, userId);
-                } else if (authorizationManager.canAddSubscription()) {
+                if (authorizationManager.canAddSubscription()) {
                     resource = subscriptionService.addSubscription(uri, type, authorizationManager.getUserId());
                 } else {
                     throw new UnauthorizedException();
                 }
                 break;
             case ACTION_DELETE:
-                if (userId != null) {
-                    resource = subscriptionService.deleteSubscription(uri, userId);
-                } else if (authorizationManager.canAddSubscription()) {
+                if (authorizationManager.canAddSubscription()) {
                     resource = subscriptionService.deleteSubscription(uri, authorizationManager.getUserId());
                 } else {
                     throw new UnauthorizedException();

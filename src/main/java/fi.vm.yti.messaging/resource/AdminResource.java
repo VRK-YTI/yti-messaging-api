@@ -12,6 +12,8 @@ import javax.ws.rs.core.Response;
 
 import org.springframework.stereotype.Component;
 
+import fi.vm.yti.messaging.exception.UnauthorizedException;
+import fi.vm.yti.messaging.security.AuthorizationManager;
 import fi.vm.yti.messaging.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,9 +27,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 public class AdminResource {
 
     private final NotificationService notificationService;
+    private final AuthorizationManager authorizationManager;
 
-    public AdminResource(final NotificationService notificationService) {
+    public AdminResource(final NotificationService notificationService,
+                         final AuthorizationManager authorizationManager) {
         this.notificationService = notificationService;
+        this.authorizationManager = authorizationManager;
     }
 
     @GET
@@ -37,11 +42,14 @@ public class AdminResource {
     @Operation(summary = "Send e-mail notifications to everyone.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Notifications sent successfully."),
-        @ApiResponse(responseCode = "404", description = "User not found.")
+        @ApiResponse(responseCode = "401", description = "Authentication failed.")
     })
     public Response sendNotifications() {
-        notificationService.sendAllNotifications();
-        return Response.ok().build();
+        if (authorizationManager.isSuperUser()) {
+            notificationService.sendAllNotifications();
+            return Response.ok().build();
+        }
+        throw new UnauthorizedException();
     }
 
     @GET
@@ -51,10 +59,13 @@ public class AdminResource {
     @Operation(summary = "Send e-mail notifications to user.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Notifications sent successfully."),
-        @ApiResponse(responseCode = "404", description = "User not found.")
+        @ApiResponse(responseCode = "401", description = "Authentication failed.")
     })
     public Response sendNotificationsToUser(@Parameter(description = "User ID to be notified.", required = true, in = ParameterIn.QUERY) @PathParam("userId") final UUID userId) {
-        notificationService.sendUserNotifications(userId);
-        return Response.ok().build();
+        if (authorizationManager.isSuperUser()) {
+            notificationService.sendUserNotifications(userId);
+            return Response.ok().build();
+        }
+        throw new UnauthorizedException();
     }
 }

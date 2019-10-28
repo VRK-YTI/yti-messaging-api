@@ -2,14 +2,12 @@ package fi.vm.yti.messaging.resource;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -33,7 +31,6 @@ import fi.vm.yti.messaging.service.ContainerNameService;
 import fi.vm.yti.messaging.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
@@ -65,17 +62,8 @@ public class UserResource {
         @ApiResponse(responseCode = "401", description = "Authentication failed."),
         @ApiResponse(responseCode = "404", description = "User not found, no subscriptions yet.")
     })
-    public Response getUserInformation(@Parameter(description = "User UUID.", in = ParameterIn.QUERY) @PathParam("userId") final UUID userId) {
-        if (userId != null) {
-            final UserDTO user = userService.findById(userId);
-            if (user != null) {
-                final Set<ResourceDTO> userResources = user.getResources();
-                userResources.forEach(containerResource -> containerResource.setPrefLabel(containerNameService.getPrefLabel(containerResource.getUri())));
-                return Response.ok(user).build();
-            } else {
-                throw new NotFoundException();
-            }
-        } else if (authorizationManager.canAddSubscription()) {
+    public Response getUserInformation() {
+        if (authorizationManager.canGetUserInformation()) {
             final UserDTO user = userService.findById(authorizationManager.getUserId());
             if (user != null) {
                 final Set<ResourceDTO> userResources = user.getResources();
@@ -99,18 +87,10 @@ public class UserResource {
         @ApiResponse(responseCode = "401", description = "Authentication failed."),
         @ApiResponse(responseCode = "404", description = "User not found.")
     })
-    public Response setSubscriptionType(@Parameter(description = "User UUID.", in = ParameterIn.QUERY) @PathParam("userId") final UUID userId,
-                                        @Parameter(description = "Subscription type request as JSON payload.") @RequestBody final String subscriptionTypeRequest) {
+    public Response setSubscriptionType(@Parameter(description = "Subscription type request as JSON payload.") @RequestBody final String subscriptionTypeRequest) {
         final SubscriptionTypeRequestDTO subscriptionTypeRequestDto = parseSubscriptionTypeRequestDto(subscriptionTypeRequest);
         final String subscriptionType = subscriptionTypeRequestDto.getSubscriptionType();
-        if (userId != null) {
-            final UserDTO user = userService.setSubscriptionType(userId, subscriptionType);
-            if (user != null) {
-                return Response.ok(user).build();
-            } else {
-                throw new NotFoundException();
-            }
-        } else if (authorizationManager.canAddSubscription()) {
+        if (authorizationManager.canGetUserInformation()) {
             final UserDTO user = userService.setSubscriptionType(authorizationManager.getUserId(), subscriptionType);
             if (user != null) {
                 return Response.ok(user).build();

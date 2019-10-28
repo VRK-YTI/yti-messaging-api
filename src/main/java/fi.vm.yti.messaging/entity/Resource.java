@@ -1,7 +1,6 @@
 package fi.vm.yti.messaging.entity;
 
 import java.util.Set;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

@@ -27,6 +27,10 @@ public class AuthorizationManagerImpl implements AuthorizationManager {
         return !userProvider.getUser().isAnonymous();
     }
 
+    public boolean isSuperUser() {
+        return userProvider.getUser().isSuperuser();
+    }
+
     public UUID getUserId() {
         return userProvider.getUser().getId();
     }

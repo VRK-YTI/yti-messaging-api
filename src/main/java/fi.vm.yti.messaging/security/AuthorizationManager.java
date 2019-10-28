@@ -11,5 +11,7 @@ public interface AuthorizationManager {
 
     boolean canAddSubscription();
 
+    boolean isSuperUser();
+
     UUID getUserId();
 }
