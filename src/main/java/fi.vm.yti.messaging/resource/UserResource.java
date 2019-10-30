@@ -36,7 +36,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Component
-@Path("/v1/users")
+@Path("/v1/user")
 @Produces("application/json")
 @Tag(name = "User")
 public class UserResource {
@@ -55,7 +55,6 @@ public class UserResource {
     }
 
     @GET
-    @Path("/{userId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     @Operation(summary = "Get user subscription information for the logged in user.")
@@ -80,7 +79,7 @@ public class UserResource {
     }
 
     @POST
-    @Path("/{userId}/subscriptiontype")
+    @Path("/subscriptiontype")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     @Operation(summary = "Sets the user subscription type.")
