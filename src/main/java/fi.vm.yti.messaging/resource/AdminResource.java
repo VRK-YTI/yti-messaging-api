@@ -25,7 +25,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Component
 @Path("/v1/admin")
 @Produces("application/json")
-@Tag(name = "System")
+@Tag(name = "Admin")
 public class AdminResource {
 
     private final NotificationService notificationService;
