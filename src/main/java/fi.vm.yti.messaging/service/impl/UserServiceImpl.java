@@ -48,7 +48,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO setSubscriptionType(final UUID userId,
                                        final String subscriptionType) {
-        return dtoMapperService.mapUser(userDao.getOrCreateUser(userId));
+        return dtoMapperService.mapUser(userDao.setSubscriptionType(userId, subscriptionType));
     }
 
     @Transactional
