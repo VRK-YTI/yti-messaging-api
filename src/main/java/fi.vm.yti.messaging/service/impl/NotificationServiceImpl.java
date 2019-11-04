@@ -226,7 +226,7 @@ public class NotificationServiceImpl implements NotificationService {
             return "aineiston";
         }
         switch (type) {
-            case TYPE_VOCABULARY:
+            case TYPE_TERMINOLOGY:
                 return "sanaston";
             case TYPE_CODELIST:
                 return "koodiston";

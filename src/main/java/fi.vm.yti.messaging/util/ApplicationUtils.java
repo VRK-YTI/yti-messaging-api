@@ -11,7 +11,7 @@ public interface ApplicationUtils {
     String TYPE_CODELIST = "codelist";
     String TYPE_LIBRARY = "library";
     String TYPE_PROFILE = "profile";
-    String TYPE_VOCABULARY = "vocabulary";
+    String TYPE_TERMINOLOGY = "terminology";
     String TYPE_COMMENTROUND = "commentround";
     String TYPE_COMMENTTHREAD = "commentthread";
 
@@ -22,7 +22,7 @@ public interface ApplicationUtils {
             case TYPE_LIBRARY:
             case TYPE_PROFILE:
                 return APPLICATION_DATAMODEL;
-            case TYPE_VOCABULARY:
+            case TYPE_TERMINOLOGY:
                 return APPLICATION_TERMINOLOGY;
             case TYPE_COMMENTROUND:
             case TYPE_COMMENTTHREAD:
