@@ -88,7 +88,7 @@ public class IntegrationServiceImpl implements IntegrationService {
                                                                final boolean fetchDateRangeChanges) {
         final String requestUrl = resolveResourcesRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration resources from: " + requestUrl);
-        final String requestBody = createResourcesRequestBody(applicationIdentifier, containerUri, fetchDateRangeChanges);
+        final String requestBody = createResourcesRequestBody(containerUri, fetchDateRangeChanges);
         final HttpEntity requestEntity = new HttpEntity<>(requestBody, createRequestHeaders());
         try {
             final ResponseEntity response = restTemplate.exchange(requestUrl, HttpMethod.POST, requestEntity, String.class);
@@ -142,7 +142,7 @@ public class IntegrationServiceImpl implements IntegrationService {
         final IntegrationResourceRequestDTO integrationResourceRequestDto = new IntegrationResourceRequestDTO();
         integrationResourceRequestDto.setIncludeIncomplete(true);
         if (fetchDateRangeChanges) {
-            setAfterAndBefore(applicationIdentifier, integrationResourceRequestDto);
+            setAfterAndBefore(integrationResourceRequestDto);
         }
         if (containerUris != null && !containerUris.isEmpty()) {
             integrationResourceRequestDto.setUri(new ArrayList<>(containerUris));
@@ -154,14 +154,13 @@ public class IntegrationServiceImpl implements IntegrationService {
         }
     }
 
-    private String createResourcesRequestBody(final String applicationIdentifier,
-                                              final String container,
+    private String createResourcesRequestBody(final String container,
                                               final boolean fetchDateRangeChanges) {
         final ObjectMapper mapper = new CustomObjectMapper();
         final IntegrationResourceRequestDTO integrationResourceRequestDto = new IntegrationResourceRequestDTO();
         integrationResourceRequestDto.setIncludeIncomplete(true);
         if (fetchDateRangeChanges) {
-            setAfterAndBefore(applicationIdentifier, integrationResourceRequestDto);
+            setAfterAndBefore(integrationResourceRequestDto);
         }
         if (container != null && !container.isEmpty()) {
             integrationResourceRequestDto.setContainer(container);
@@ -175,17 +174,14 @@ public class IntegrationServiceImpl implements IntegrationService {
         }
     }
 
-    private void setAfterAndBefore(final String applicationIdentifier,
-                                   final IntegrationResourceRequestDTO integrationResourceRequestDto) {
+    private void setAfterAndBefore(final IntegrationResourceRequestDTO integrationResourceRequestDto) {
         final TimeZone tz = TimeZone.getTimeZone("Europe/Helsinki");
         final DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         df.setTimeZone(tz);
         final String after = df.format(yesterday());
         final String before = df.format(tomorrow());
         integrationResourceRequestDto.setAfter(after);
-        if (!applicationIdentifier.equalsIgnoreCase(APPLICATION_TERMINOLOGY)) {
-            integrationResourceRequestDto.setBefore(before);
-        }
+        integrationResourceRequestDto.setBefore(before);
     }
 
     private String resolveRequestUrl(final String applicationIdentifier,
