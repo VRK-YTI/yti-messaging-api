@@ -1,6 +1,7 @@
 package fi.vm.yti.messaging.resource;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.ws.rs.POST;
@@ -9,6 +10,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,6 +38,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Produces("application/json")
 @Tag(name = "Subscription")
 public class SubscriptionResource {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SubscriptionResource.class);
 
     private final static String ACTION_GET = "GET";
     private final static String ACTION_ADD = "ADD";
@@ -63,35 +68,42 @@ public class SubscriptionResource {
         final String uri = subscriptionRequestDto.getUri();
         final String type = subscriptionRequestDto.getType();
         final String action = subscriptionRequestDto.getAction();
-        ResourceDTO resource = null;
-        switch (action) {
-            case ACTION_GET:
-                if (authorizationManager.canAddSubscription()) {
-                    resource = subscriptionService.getSubscription(uri, authorizationManager.getUserId());
-                } else {
-                    throw new UnauthorizedException();
-                }
-                break;
-            case ACTION_ADD:
-                if (authorizationManager.canAddSubscription()) {
-                    resource = subscriptionService.addSubscription(uri, type, authorizationManager.getUserId());
-                } else {
-                    throw new UnauthorizedException();
-                }
-                break;
-            case ACTION_DELETE:
-                if (authorizationManager.canAddSubscription()) {
-                    resource = subscriptionService.deleteSubscription(uri, authorizationManager.getUserId());
-                } else {
-                    throw new UnauthorizedException();
-                }
-                break;
-            default:
-                throw new YtiMessagingException(new ErrorModel(HttpStatus.NOT_ACCEPTABLE.value(), "Unsupported action found in request payload: " + type));
+        final ResourceDTO resource;
+        final UUID userId = authorizationManager.getUserId();
+        if (userId != null) {
+            switch (action) {
+                case ACTION_GET:
+                    if (authorizationManager.canAddSubscription()) {
+                        resource = subscriptionService.getSubscription(uri, authorizationManager.getUserId());
+                    } else {
+                        throw new UnauthorizedException();
+                    }
+                    break;
+                case ACTION_ADD:
+                    if (authorizationManager.canAddSubscription()) {
+                        resource = subscriptionService.addSubscription(uri, type, authorizationManager.getUserId());
+                    } else {
+                        throw new UnauthorizedException();
+                    }
+                    break;
+                case ACTION_DELETE:
+                    if (authorizationManager.canAddSubscription()) {
+                        resource = subscriptionService.deleteSubscription(uri, authorizationManager.getUserId());
+                    } else {
+                        throw new UnauthorizedException();
+                    }
+                    break;
+                default:
+                    throw new YtiMessagingException(new ErrorModel(HttpStatus.NOT_ACCEPTABLE.value(), "Unsupported action found in request payload: " + type));
+            }
+        } else {
+            resource = null;
         }
         if (resource != null) {
             return Response.ok(resource).build();
         } else {
+            // TODO: Return 404, not 500 not found!
+            LOG.debug("Resource not found for user: " + userId + " , returning 404 for uri: " + uri);
             throw new NotFoundException();
         }
     }

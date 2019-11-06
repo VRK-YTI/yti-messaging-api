@@ -78,8 +78,8 @@ public class IntegrationServiceImpl implements IntegrationService {
                 throw new NotFoundException();
             }
         } catch (final Exception e) {
-            LOG.error("Fetching integration containers failed: ", e.getMessage());
-            throw new YtiMessagingException(new ErrorModel(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to fetch integration containers!"));
+            LOG.error("Fetching integration containers failed for application: " + applicationIdentifier, e.getMessage());
+            throw new YtiMessagingException(new ErrorModel(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to fetch integration containers for application: " + applicationIdentifier));
         }
     }
 
@@ -98,8 +98,8 @@ public class IntegrationServiceImpl implements IntegrationService {
                 throw new NotFoundException();
             }
         } catch (final Exception e) {
-            LOG.error("Fetching integration resources failed: ", e.getMessage());
-            throw new YtiMessagingException(new ErrorModel(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to fetch integration resources!"));
+            LOG.error("Fetching integration resources failed for application: " + applicationIdentifier, e.getMessage());
+            throw new YtiMessagingException(new ErrorModel(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to fetch integration resources for application: " + applicationIdentifier));
         }
     }
 

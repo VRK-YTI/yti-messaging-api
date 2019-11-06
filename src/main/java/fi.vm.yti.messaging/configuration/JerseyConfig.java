@@ -7,6 +7,7 @@ import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJaxbJsonP
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.stereotype.Component;
 
+import fi.vm.yti.messaging.exception.exceptionmapping.YtiMessagingExceptionMapper;
 import fi.vm.yti.messaging.filter.CacheFilter;
 import fi.vm.yti.messaging.filter.CharsetResponseFilter;
 import fi.vm.yti.messaging.filter.RequestLoggingFilter;
@@ -50,6 +51,9 @@ public class JerseyConfig extends ResourceConfig {
     public JerseyConfig() {
         final JacksonJaxbJsonProvider provider = new JacksonJaxbJsonProvider();
         provider.setMapper(new CustomObjectMapper());
+
+        // ExceptionMappers
+        register(YtiMessagingExceptionMapper.class);
 
         // Charset filter
         register(CharsetResponseFilter.class, Priorities.AUTHENTICATION);
