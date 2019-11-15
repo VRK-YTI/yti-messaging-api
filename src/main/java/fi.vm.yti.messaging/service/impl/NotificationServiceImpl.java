@@ -194,7 +194,7 @@ public class NotificationServiceImpl implements NotificationService {
                                     final StringBuilder builder,
                                     final Set<IntegrationResourceDTO> resources) {
         resources.forEach(resource -> {
-            addResourceToBuilder(false, applicationIdentifier, null, builder, resource);
+            addResourceToBuilder(false, applicationIdentifier, builder, resource);
             final Set<IntegrationResourceDTO> subResources = resource.getResources();
             if (subResources != null && !subResources.isEmpty()) {
                 final Set<IntegrationResourceDTO> subResourcesWithStatusChanges = new HashSet<>();
@@ -207,8 +207,8 @@ public class NotificationServiceImpl implements NotificationService {
                         subResourcesWithContentChanges.add(subResource);
                     }
                 });
-                addSubResourcesWithStatusChanges(applicationIdentifier, resource.getUri(), builder, subResourcesWithStatusChanges);
-                addSubResourcesWithContentChanges(applicationIdentifier, resource.getUri(), builder, subResourcesWithContentChanges);
+                addSubResourcesWithStatusChanges(applicationIdentifier, builder, subResourcesWithStatusChanges);
+                addSubResourcesWithContentChanges(applicationIdentifier, builder, subResourcesWithContentChanges);
             } else {
                 builder.append("<ul>");
                 builder.append("<li>");
@@ -244,28 +244,26 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private void addSubResourcesWithStatusChanges(final String applicationIdentifier,
-                                                  final String containerUri,
                                                   final StringBuilder builder,
                                                   final Set<IntegrationResourceDTO> resources) {
         if (resources != null && !resources.isEmpty()) {
             builder.append("<ul>");
             builder.append("<li>muuttuneet tiedot ja tilat</li>");
             builder.append("<ul>");
-            resources.forEach(resource -> addResourceToBuilder(true, applicationIdentifier, containerUri, builder, resource));
+            resources.forEach(resource -> addResourceToBuilder(true, applicationIdentifier, builder, resource));
             builder.append("</ul>");
             builder.append("</ul>");
         }
     }
 
     private void addSubResourcesWithContentChanges(final String applicationIdentifier,
-                                                   final String containerUri,
                                                    final StringBuilder builder,
                                                    final Set<IntegrationResourceDTO> resources) {
         if (resources != null && !resources.isEmpty()) {
             builder.append("<ul>");
             builder.append("<li>muuttuneet tiedot</li>");
             builder.append("<ul>");
-            resources.forEach(resource -> addResourceToBuilder(true, applicationIdentifier, containerUri, builder, resource));
+            resources.forEach(resource -> addResourceToBuilder(true, applicationIdentifier, builder, resource));
             builder.append("</ul>");
             builder.append("</ul>");
         }
@@ -273,7 +271,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     private void addResourceToBuilder(final boolean wrapToList,
                                       final String applicationIdentifier,
-                                      final String containerUri,
                                       final StringBuilder builder,
                                       final IntegrationResourceDTO resource) {
         final String prefLabel = getPrefLabelValueForEmail(resource.getPrefLabel());
@@ -282,15 +279,7 @@ public class NotificationServiceImpl implements NotificationService {
             builder.append("<li>");
         }
         builder.append("<a href=");
-        if (applicationIdentifier.equalsIgnoreCase(APPLICATION_COMMENTS)) {
-            if (resource.getType().equalsIgnoreCase(TYPE_COMMENTROUND)) {
-                builder.append(constructCommentRoundUri(resourceUri));
-            } else if (resource.getType().equalsIgnoreCase(TYPE_COMMENTTHREAD)) {
-                builder.append(constructCommentThreadUri(containerUri, resourceUri));
-            }
-        } else {
-            builder.append(embedEnvironmentToUri(resourceUri));
-        }
+        builder.append(embedEnvironmentToUri(resourceUri));
         builder.append(">");
         if (prefLabel != null) {
             builder.append(prefLabel);
@@ -347,39 +336,6 @@ public class NotificationServiceImpl implements NotificationService {
                 return "Virheellinen";
             default:
                 return status;
-        }
-    }
-
-    private String constructCommentRoundUri(final String commentRoundId) {
-        final String env = messagingServiceProperties.getEnv();
-        switch (env) {
-            case "awsprod":
-                return "https://kommentit.suomi.fi/commentround;commentRoundId=" + commentRoundId;
-            case "awstest":
-                return "https://kommentit.test.yti.cloud.vrk.fi/commentround;commentRoundId=" + commentRoundId;
-            case "awsdev":
-                return "https://kommentit.dev.yti.cloud.vrk.fi/commentround;commentRoundId=" + commentRoundId;
-            case "local":
-                return "http://localhost:9700/commentround;commentRoundId=" + commentRoundId;
-            default:
-                throw new YtiMessagingException(new ErrorModel(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to resolve comments url address for unknown environment: " + env));
-        }
-    }
-
-    private String constructCommentThreadUri(final String commentRoundId,
-                                             final String commentThreadId) {
-        final String env = messagingServiceProperties.getEnv();
-        switch (env) {
-            case "awsprod":
-                return "https://kommentit.suomi.fi/commentround;commentRoundId=" + commentRoundId + ";commentThreadId=" + commentThreadId;
-            case "awstest":
-                return "https://kommentit.test.yti.cloud.vrk.fi/commentround;commentRoundId=" + commentRoundId + ";commentThreadId=" + commentThreadId;
-            case "awsdev":
-                return "https://kommentit.dev.yti.cloud.vrk.fi/commentround;commentRoundId=" + commentRoundId + ";commentThreadId=" + commentThreadId;
-            case "local":
-                return "http://localhost:9700/commentround;commentRoundId=" + commentRoundId + ";commentThreadId=" + commentThreadId;
-            default:
-                throw new YtiMessagingException(new ErrorModel(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to resolve comments url address for unknown environment: " + env));
         }
     }
 
