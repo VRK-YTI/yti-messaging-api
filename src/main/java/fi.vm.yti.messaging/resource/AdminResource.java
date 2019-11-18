@@ -55,7 +55,7 @@ public class AdminResource {
     }
 
     @GET
-    @Path("/{userId}/notify")
+    @Path("/notify/{userId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Send e-mail notifications to user.")
