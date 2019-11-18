@@ -195,7 +195,7 @@ public class IntegrationServiceImpl implements IntegrationService {
             case APPLICATION_DATAMODEL:
                 return dataModelProperties.getPublicUrl() + PATH_DATAMODEL_API + PATH_API_WITH_VERSION + endPoint;
             case APPLICATION_TERMINOLOGY:
-                return terminologyProperties.getPublicUrl() + endPoint;
+                return terminologyProperties.getPublicUrl() + PATH_TERMINOLOGY_API + PATH_API_WITH_VERSION + endPoint;
             case APPLICATION_COMMENTS:
                 return commentsProperties.getPublicUrl() + PATH_COMMENTS_API + PATH_API_WITH_VERSION + endPoint;
             default:

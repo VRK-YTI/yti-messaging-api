@@ -4,6 +4,7 @@ public class ApiConstants {
 
     public static final String PATH_CODELIST_API = "/codelist-api";
     public static final String PATH_DATAMODEL_API = "/datamodel";
+    public static final String PATH_TERMINOLOGY_API = "/terminology";
     public static final String PATH_COMMENTS_API = "/comments-api";
     public static final String PATH_API_WITH_VERSION = "/api/v1";
     public static final String PATH_CONTAINERS_API = "/integration/containers";
