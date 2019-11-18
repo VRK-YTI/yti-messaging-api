@@ -63,7 +63,7 @@ public class AdminResource {
         @ApiResponse(responseCode = "200", description = "Notifications sent successfully."),
         @ApiResponse(responseCode = "401", description = "Authentication failed.")
     })
-    public Response sendNotificationsToUser(@Parameter(description = "User ID to be notified.", required = true, in = ParameterIn.QUERY) @PathParam("userId") final UUID userId) {
+    public Response sendNotificationsToUser(@Parameter(description = "User ID to be notified.", required = true, in = ParameterIn.PATH) @PathParam("userId") final UUID userId) {
         if (authorizationManager.isSuperUser()) {
             notificationService.sendUserNotifications(userId);
             return Response.ok().build();
