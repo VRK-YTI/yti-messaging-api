@@ -15,7 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IntegrationResourceRequestDTO {
 
-    private String container;
+    private List<String> container;
     private Integer pageFrom;
     private Integer pageSize;
     private List<String> status;
@@ -29,11 +29,11 @@ public class IntegrationResourceRequestDTO {
     private boolean includeIncomplete;
     private List<String> uri;
 
-    public String getContainer() {
+    public List<String> getContainer() {
         return container;
     }
 
-    public void setContainer(final String container) {
+    public void setContainer(final List<String> container) {
         this.container = container;
     }
 

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -163,7 +164,9 @@ public class IntegrationServiceImpl implements IntegrationService {
             setAfterAndBefore(integrationResourceRequestDto);
         }
         if (container != null && !container.isEmpty()) {
-            integrationResourceRequestDto.setContainer(container);
+            final List<String> containerUris = new ArrayList<>();
+            containerUris.add(container);
+            integrationResourceRequestDto.setContainer(containerUris);
         }
         integrationResourceRequestDto.setPageFrom(0);
         integrationResourceRequestDto.setPageSize(10);
