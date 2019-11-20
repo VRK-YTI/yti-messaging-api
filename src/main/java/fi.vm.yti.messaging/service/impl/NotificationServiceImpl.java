@@ -291,8 +291,9 @@ public class NotificationServiceImpl implements NotificationService {
         if (statusModified != null && resource.getStatusModified().after(yesterday())) {
             builder.append(": " + localizeStatus(resource.getStatus()));
         }
-        if (applicationIdentifier.equalsIgnoreCase(APPLICATION_COMMENTS) && resource.getType().equals(TYPE_COMMENTTHREAD)) {
-            if (resource.getContentModified().after(yesterday())) {
+        if (APPLICATION_COMMENTS.equalsIgnoreCase(applicationIdentifier) && TYPE_COMMENTTHREAD.equalsIgnoreCase(resource.getType())) {
+            final Date contentModified = resource.getContentModified();
+            if (contentModified != null && contentModified.after(yesterday())) {
                 builder.append(" tietosisältöön on tullut uusia kommentteja");
             }
         }
