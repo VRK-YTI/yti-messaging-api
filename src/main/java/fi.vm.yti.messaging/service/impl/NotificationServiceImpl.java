@@ -335,6 +335,14 @@ public class NotificationServiceImpl implements NotificationService {
                 return "Poistettu käytöstä";
             case "INVALID":
                 return "Virheellinen";
+            case "INPROGRESS":
+                return "Käynnissä";
+            case "AWAIT":
+                return "Odottaa";
+            case "ENDED":
+                return "Päättynyt";
+            case "CLOSED":
+                return "Suljettu";
             default:
                 return status;
         }
