@@ -22,7 +22,6 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
@@ -32,8 +31,8 @@ import fi.vm.yti.messaging.configuration.CustomObjectMapper;
 import fi.vm.yti.messaging.configuration.DataModelProperties;
 import fi.vm.yti.messaging.configuration.TerminologyProperties;
 import fi.vm.yti.messaging.dto.ErrorModel;
-import fi.vm.yti.messaging.dto.IntegrationResourceDTO;
 import fi.vm.yti.messaging.dto.IntegrationResourceRequestDTO;
+import fi.vm.yti.messaging.dto.IntegrationResponseDTO;
 import fi.vm.yti.messaging.exception.NotFoundException;
 import fi.vm.yti.messaging.exception.YtiMessagingException;
 import fi.vm.yti.messaging.service.IntegrationService;
@@ -63,9 +62,9 @@ public class IntegrationServiceImpl implements IntegrationService {
         this.restTemplate = restTemplate;
     }
 
-    public Set<IntegrationResourceDTO> getIntegrationContainers(final String applicationIdentifier,
-                                                                final Set<String> containerUris,
-                                                                final boolean fetchDateRangeChanges) {
+    public IntegrationResponseDTO getIntegrationContainers(final String applicationIdentifier,
+                                                           final Set<String> containerUris,
+                                                           final boolean fetchDateRangeChanges) {
         final String requestUrl = resolveContainersRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration containers from: " + requestUrl);
         final String requestBody = createContainerRequestBody(applicationIdentifier, containerUris, fetchDateRangeChanges);
@@ -74,7 +73,7 @@ public class IntegrationServiceImpl implements IntegrationService {
         try {
             final ResponseEntity response = restTemplate.exchange(requestUrl, HttpMethod.POST, requestEntity, String.class);
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                return parseResourcesFromResponse(response);
+                return parseIntegrationResponse(response);
             } else {
                 throw new NotFoundException();
             }
@@ -84,9 +83,9 @@ public class IntegrationServiceImpl implements IntegrationService {
         }
     }
 
-    public Set<IntegrationResourceDTO> getIntegrationResources(final String applicationIdentifier,
-                                                               final String containerUri,
-                                                               final boolean fetchDateRangeChanges) {
+    public IntegrationResponseDTO getIntegrationResources(final String applicationIdentifier,
+                                                          final String containerUri,
+                                                          final boolean fetchDateRangeChanges) {
         final String requestUrl = resolveResourcesRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration resources from: " + requestUrl);
         final String requestBody = createResourcesRequestBody(containerUri, fetchDateRangeChanges);
@@ -94,7 +93,7 @@ public class IntegrationServiceImpl implements IntegrationService {
         try {
             final ResponseEntity response = restTemplate.exchange(requestUrl, HttpMethod.POST, requestEntity, String.class);
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                return parseResourcesFromResponse(response);
+                return parseIntegrationResponse(response);
             } else {
                 throw new NotFoundException();
             }
@@ -104,7 +103,7 @@ public class IntegrationServiceImpl implements IntegrationService {
         }
     }
 
-    private Set<IntegrationResourceDTO> parseResourcesFromResponse(final ResponseEntity response) {
+    private IntegrationResponseDTO parseIntegrationResponse(final ResponseEntity response) {
         final Object responseBody = response.getBody();
         LOG.info("Fetching integration resources: " + responseBody);
         if (responseBody != null) {
@@ -112,14 +111,7 @@ public class IntegrationServiceImpl implements IntegrationService {
                 final ObjectMapper mapper = new ObjectMapper();
                 mapper.setFilterProvider(new SimpleFilterProvider().setFailOnUnknownId(false));
                 final String data = responseBody.toString();
-                final JsonNode jsonNode = mapper.readTree(data);
-                final String dataString;
-                if (!jsonNode.isArray() && jsonNode.has(ITEM_RESULTS)) {
-                    dataString = jsonNode.get(ITEM_RESULTS).toString();
-                } else {
-                    dataString = "[]";
-                }
-                return mapper.readValue(dataString, new TypeReference<Set<IntegrationResourceDTO>>() {
+                return mapper.readValue(data, new TypeReference<IntegrationResponseDTO>() {
                 });
             } catch (final IOException e) {
                 throw new YtiMessagingException(new ErrorModel(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to parse integration resources!"));
@@ -178,6 +170,7 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     private void setAfterAndBefore(final IntegrationResourceRequestDTO integrationResourceRequestDto) {
+        // TODO: Fetch changes between between 07-07, and harmonize Scheduling to be in line with this
         final TimeZone tz = TimeZone.getTimeZone("Europe/Helsinki");
         final DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         df.setTimeZone(tz);

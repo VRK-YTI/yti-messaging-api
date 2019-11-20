@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
@@ -15,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @XmlRootElement
-@XmlType(propOrder = { "uri", "type", "prefLabel", "description", "localName", "status", "modified", "statusModified", "contentModified" })
+@XmlType(propOrder = { "uri", "type", "prefLabel", "description", "localName", "status", "modified", "statusModified", "contentModified", "type", "subResourceResponse" })
 @Schema(name = "Integration resource", description = "Integration resource DTO that represents data for one single Container or Resource for integration use.")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IntegrationResourceDTO implements Serializable {
@@ -31,7 +30,7 @@ public class IntegrationResourceDTO implements Serializable {
     private Date statusModified;
     private Date contentModified;
     private String type;
-    private Set<IntegrationResourceDTO> resources;
+    private IntegrationResponseDTO subResourceResponse;
 
     public IntegrationResourceDTO() {
         prefLabel = new HashMap<>();
@@ -137,11 +136,11 @@ public class IntegrationResourceDTO implements Serializable {
         this.type = type;
     }
 
-    public Set<IntegrationResourceDTO> getResources() {
-        return resources;
+    public IntegrationResponseDTO getSubResourceResponse() {
+        return subResourceResponse;
     }
 
-    public void setResources(final Set<IntegrationResourceDTO> resources) {
-        this.resources = resources;
+    public void setSubResourceResponse(final IntegrationResponseDTO subResourceResponse) {
+        this.subResourceResponse = subResourceResponse;
     }
 }

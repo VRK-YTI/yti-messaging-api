@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import fi.vm.yti.messaging.dto.IntegrationResourceDTO;
+import fi.vm.yti.messaging.dto.IntegrationResponseDTO;
 import fi.vm.yti.messaging.dto.ResourceDTO;
 import fi.vm.yti.messaging.service.ContainerNameService;
 import fi.vm.yti.messaging.service.IntegrationService;
@@ -57,8 +58,11 @@ public class ContainerNameServiceImpl implements ContainerNameService {
         final String applicationIdentifier = getApplicationByType(type);
         final Set<String> uris = new HashSet<>();
         uris.add(uri);
-        final Set<IntegrationResourceDTO> integrationResources = integrationService.getIntegrationContainers(applicationIdentifier, uris, false);
-        integrationResources.forEach(this::addPrefLabel);
+        final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, uris, false);
+        final Set<IntegrationResourceDTO> integrationResources = integrationResponse.getResults();
+        if (integrationResources != null && integrationResources.isEmpty()) {
+            integrationResources.forEach(this::addPrefLabel);
+        }
     }
 
     public Map<String, String> getPrefLabel(final String uri) {
@@ -78,7 +82,8 @@ public class ContainerNameServiceImpl implements ContainerNameService {
             final Set<String> containerUris = new HashSet<>();
             containerResources.forEach(container -> containerUris.add(container.getUri()));
             if (!containerUris.isEmpty()) {
-                final Set<IntegrationResourceDTO> integrationResources = integrationService.getIntegrationContainers(applicationIdentifier, containerUris, false);
+                final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris, false);
+                final Set<IntegrationResourceDTO> integrationResources = integrationResponse.getResults();
                 if (integrationResources != null && !integrationResources.isEmpty()) {
                     integrationResources.forEach(integrationResource -> {
                         final Map<String, String> prefLabel = integrationResource.getPrefLabel();

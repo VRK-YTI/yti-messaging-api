@@ -13,5 +13,4 @@ public class ApiConstants {
     public static final String APPLICATION_DATAMODEL = "datamodel";
     public static final String APPLICATION_TERMINOLOGY = "terminology";
     public static final String APPLICATION_COMMENTS = "comments";
-    public static final String ITEM_RESULTS = "results";
 }
