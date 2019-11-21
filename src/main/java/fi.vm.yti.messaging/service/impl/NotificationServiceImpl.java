@@ -198,37 +198,39 @@ public class NotificationServiceImpl implements NotificationService {
         resources.forEach(resource -> {
             addResourceToBuilder(false, applicationIdentifier, builder, resource);
             final IntegrationResponseDTO subResourceResponse = resource.getSubResourceResponse();
-            final Set<IntegrationResourceDTO> subResources = subResourceResponse.getResults();
-            if (subResources != null && !subResources.isEmpty()) {
-                final Set<IntegrationResourceDTO> subResourcesWithStatusChanges = new HashSet<>();
-                final Set<IntegrationResourceDTO> subResourcesWithContentChanges = new HashSet<>();
-                subResources.forEach(subResource -> {
-                    final Date statusModified = subResource.getStatusModified();
-                    if (statusModified != null && statusModified.after(yesterday())) {
-                        subResourcesWithStatusChanges.add(subResource);
-                    } else {
-                        subResourcesWithContentChanges.add(subResource);
+            if (subResourceResponse != null) {
+                final Set<IntegrationResourceDTO> subResources = subResourceResponse.getResults();
+                if (subResources != null && !subResources.isEmpty()) {
+                    final Set<IntegrationResourceDTO> subResourcesWithStatusChanges = new HashSet<>();
+                    final Set<IntegrationResourceDTO> subResourcesWithContentChanges = new HashSet<>();
+                    subResources.forEach(subResource -> {
+                        final Date statusModified = subResource.getStatusModified();
+                        if (statusModified != null && statusModified.after(yesterday())) {
+                            subResourcesWithStatusChanges.add(subResource);
+                        } else {
+                            subResourcesWithContentChanges.add(subResource);
+                        }
+                    });
+                    addSubResourcesWithStatusChanges(applicationIdentifier, builder, subResourcesWithStatusChanges);
+                    addSubResourcesWithContentChanges(applicationIdentifier, builder, subResourcesWithContentChanges);
+                    final Meta meta = subResourceResponse.getMeta();
+                    if (meta != null && meta.getTotalResults() > 0) {
+                        builder.append("<ul>");
+                        builder.append("<li>");
+                        builder.append(meta.getTotalResults());
+                        builder.append(" muutosta yhteensä");
+                        builder.append("</li>");
+                        builder.append("</ul>");
                     }
-                });
-                addSubResourcesWithStatusChanges(applicationIdentifier, builder, subResourcesWithStatusChanges);
-                addSubResourcesWithContentChanges(applicationIdentifier, builder, subResourcesWithContentChanges);
-                final Meta meta = subResourceResponse.getMeta();
-                if (meta != null && meta.getTotalResults() > 0) {
+                } else {
                     builder.append("<ul>");
                     builder.append("<li>");
-                    builder.append(meta.getTotalResults());
-                    builder.append(" muutosta yhteensä");
+                    final String typeLabel = resolveLocalizationForType(resource.getType());
+                    builder.append(typeLabel);
+                    builder.append(" tiedot ovat muuttuneet");
                     builder.append("</li>");
                     builder.append("</ul>");
                 }
-            } else {
-                builder.append("<ul>");
-                builder.append("<li>");
-                final String typeLabel = resolveLocalizationForType(resource.getType());
-                builder.append(typeLabel);
-                builder.append(" tiedot ovat muuttuneet");
-                builder.append("</li>");
-                builder.append("</ul>");
             }
         });
     }
