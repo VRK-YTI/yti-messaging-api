@@ -373,11 +373,19 @@ public class NotificationServiceImpl implements NotificationService {
 
     private Set<IntegrationResourceDTO> getUpdatedResourcesForAllApplications() {
         final Set<IntegrationResourceDTO> updatedResources = new HashSet<>();
-        updatedResources.addAll(getUpdatedApplicationResources(APPLICATION_CODELIST));
-        updatedResources.addAll(getUpdatedApplicationResources(APPLICATION_DATAMODEL));
-        updatedResources.addAll(getUpdatedApplicationResources(APPLICATION_TERMINOLOGY));
-        updatedResources.addAll(getUpdatedApplicationResources(APPLICATION_COMMENTS));
+        addUpdatedResourcesForApplication(APPLICATION_CODELIST, updatedResources);
+        addUpdatedResourcesForApplication(APPLICATION_DATAMODEL, updatedResources);
+        addUpdatedResourcesForApplication(APPLICATION_TERMINOLOGY, updatedResources);
+        addUpdatedResourcesForApplication(APPLICATION_COMMENTS, updatedResources);
         return updatedResources;
+    }
+
+    private void addUpdatedResourcesForApplication(final String applicationIdentifier,
+                                                   final Set<IntegrationResourceDTO> updatedResources) {
+        final Set<IntegrationResourceDTO> resources = getUpdatedApplicationResources(applicationIdentifier);
+        if (resources != null && !resources.isEmpty()) {
+            updatedResources.addAll(resources);
+        }
     }
 
     private Set<IntegrationResourceDTO> getUpdatedApplicationResources(final String applicationIdentifier) {
