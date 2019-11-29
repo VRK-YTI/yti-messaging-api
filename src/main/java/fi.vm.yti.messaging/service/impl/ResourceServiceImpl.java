@@ -1,6 +1,7 @@
 package fi.vm.yti.messaging.service.impl;
 
 import java.util.Set;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
@@ -41,5 +42,11 @@ public class ResourceServiceImpl implements ResourceService {
     @Transactional
     public Set<String> getResourceUrisForApplication(final String application) {
         return resourceDao.findUrisByApplication(application);
+    }
+
+    @Transactional
+    public Set<String> getResourceUrisForApplicationAndUserId(final String application,
+                                                              final UUID userId) {
+        return resourceDao.findUrisByApplicationAndUserId(application, userId);
     }
 }

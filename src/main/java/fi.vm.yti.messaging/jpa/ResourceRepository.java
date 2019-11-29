@@ -1,6 +1,7 @@
 package fi.vm.yti.messaging.jpa;
 
 import java.util.Set;
+import java.util.UUID;
 
 import javax.transaction.Transactional;
 
@@ -21,4 +22,8 @@ public interface ResourceRepository extends CrudRepository<Resource, String> {
 
     @Query("SELECT uri FROM Resource WHERE application = :applicationIdentifier")
     Set<String> findUrisByApplication(@Param(value = "applicationIdentifier") final String applicationIdentifier);
+
+    @Query(value = "SELECT uri FROM resource AS r WHERE application = :applicationIdentifier AND r.uri IN (SELECT resource_uri FROM user_resource WHERE user_id = :userId)", nativeQuery = true)
+    Set<String> findUrisByApplicationAndUserId(@Param(value = "applicationIdentifier") final String applicationIdentifier,
+                                               @Param(value = "userId") final UUID userId);
 }

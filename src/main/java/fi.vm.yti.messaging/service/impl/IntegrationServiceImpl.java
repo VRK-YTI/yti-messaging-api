@@ -37,13 +37,15 @@ import fi.vm.yti.messaging.exception.NotFoundException;
 import fi.vm.yti.messaging.exception.YtiMessagingException;
 import fi.vm.yti.messaging.service.IntegrationService;
 import static fi.vm.yti.messaging.api.ApiConstants.*;
-import static org.assertj.core.util.DateUtil.tomorrow;
+import static java.time.LocalDate.now;
 import static org.assertj.core.util.DateUtil.yesterday;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
 
     private static final Logger LOG = LoggerFactory.getLogger(IntegrationServiceImpl.class);
+    private static final String DATE_SUFFIX = "T07:00:00.000+0200";
+
     private final CodelistProperties codelistProperties;
     private final DataModelProperties dataModelProperties;
     private final TerminologyProperties terminologyProperties;
@@ -67,7 +69,7 @@ public class IntegrationServiceImpl implements IntegrationService {
                                                            final boolean fetchDateRangeChanges) {
         final String requestUrl = resolveContainersRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration containers from: " + requestUrl);
-        final String requestBody = createContainerRequestBody(applicationIdentifier, containerUris, fetchDateRangeChanges);
+        final String requestBody = createContainerRequestBody(containerUris, fetchDateRangeChanges);
         LOG.info("Fetching integration containers request body: " + requestBody);
         final HttpEntity requestEntity = new HttpEntity<>(requestBody, createRequestHeaders());
         try {
@@ -128,8 +130,7 @@ public class IntegrationServiceImpl implements IntegrationService {
         return requestHeaders;
     }
 
-    private String createContainerRequestBody(final String applicationIdentifier,
-                                              final Set<String> containerUris,
+    private String createContainerRequestBody(final Set<String> containerUris,
                                               final boolean fetchDateRangeChanges) {
         final ObjectMapper mapper = new CustomObjectMapper();
         final IntegrationResourceRequestDTO integrationResourceRequestDto = new IntegrationResourceRequestDTO();
@@ -161,7 +162,7 @@ public class IntegrationServiceImpl implements IntegrationService {
             integrationResourceRequestDto.setContainer(containerUris);
         }
         integrationResourceRequestDto.setPageFrom(0);
-        integrationResourceRequestDto.setPageSize(10);
+        integrationResourceRequestDto.setPageSize(RESOURCES_PAGE_SIZE);
         try {
             return mapper.writeValueAsString(integrationResourceRequestDto);
         } catch (final JsonProcessingException e) {
@@ -170,12 +171,11 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     private void setAfterAndBefore(final IntegrationResourceRequestDTO integrationResourceRequestDto) {
-        // TODO: Fetch changes between between 07-07, and harmonize Scheduling to be in line with this
         final TimeZone tz = TimeZone.getTimeZone("Europe/Helsinki");
         final DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         df.setTimeZone(tz);
-        final String after = df.format(yesterday());
-        final String before = df.format(tomorrow());
+        final String before = df.format(now()) + DATE_SUFFIX;
+        final String after = df.format(yesterday()) + DATE_SUFFIX;
         integrationResourceRequestDto.setAfter(after);
         integrationResourceRequestDto.setBefore(before);
     }

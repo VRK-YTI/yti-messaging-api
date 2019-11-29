@@ -62,7 +62,7 @@ public class NotificationServiceImpl implements NotificationService {
         this.messagingServiceProperties = messagingServiceProperties;
     }
 
-    @Scheduled(cron = "0 0 0 * * *", zone = "Europe/Helsinki")
+    @Scheduled(cron = "7 0 0 * * *", zone = "Europe/Helsinki")
     @Transactional
     public void sendAllNotifications() {
         LOG.info("Sending scheduled notifications!");
@@ -75,11 +75,12 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendUserNotifications(final UUID userId) {
         final UserDTO user = userService.findById(userId);
         if (user != null && SUBSCRIPTION_TYPE_DAILY.equalsIgnoreCase(user.getSubscriptionType())) {
-            // TODO: Optimize and check only this users resources for updates!
-            final Map<String, IntegrationResourceDTO> updatedResourcesMap = fetchAndMapUpdatedResources();
+            final Map<String, IntegrationResourceDTO> updatedResourcesMap = fetchAndMapUpdatedResourcesForUser(userId);
             final UserNotificationDTO userNotification = mapUserNotificationResource(user, updatedResourcesMap);
             if (userNotification != null) {
                 sendSingleUserNotifications(user.getId(), userNotification);
+            } else {
+                throw new NotFoundException();
             }
         } else {
             throw new NotFoundException();
@@ -87,8 +88,12 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private Map<String, IntegrationResourceDTO> fetchAndMapUpdatedResources() {
+        return fetchAndMapUpdatedResourcesForUser(null);
+    }
+
+    private Map<String, IntegrationResourceDTO> fetchAndMapUpdatedResourcesForUser(final UUID userId) {
         final Map<String, IntegrationResourceDTO> updatedResourcesMap = new HashMap<>();
-        final Set<IntegrationResourceDTO> allUpdates = getUpdatedResourcesForAllApplications();
+        final Set<IntegrationResourceDTO> allUpdates = getUpdatedContainersForAllApplications(userId);
         allUpdates.forEach(updatedResource -> updatedResourcesMap.put(updatedResource.getUri(), updatedResource));
         return updatedResourcesMap;
     }
@@ -214,25 +219,37 @@ public class NotificationServiceImpl implements NotificationService {
                     addSubResourcesWithStatusChanges(applicationIdentifier, builder, subResourcesWithStatusChanges);
                     addSubResourcesWithContentChanges(applicationIdentifier, builder, subResourcesWithContentChanges);
                     final Meta meta = subResourceResponse.getMeta();
-                    if (meta != null && meta.getTotalResults() > 0) {
-                        builder.append("<ul>");
-                        builder.append("<li>");
-                        builder.append(meta.getTotalResults());
-                        builder.append(" muutosta yhteensä");
-                        builder.append("</li>");
-                        builder.append("</ul>");
+                    if (meta != null && meta.getTotalResults() > RESOURCES_PAGE_SIZE) {
+                        appendTotalSubResources(builder, meta.getTotalResults());
                     }
                 } else {
-                    builder.append("<ul>");
-                    builder.append("<li>");
-                    final String typeLabel = resolveLocalizationForType(resource.getType());
-                    builder.append(typeLabel);
-                    builder.append(" tiedot ovat muuttuneet");
-                    builder.append("</li>");
-                    builder.append("</ul>");
+                    appendInformationChanged(builder, resource.getType());
                 }
+            } else {
+                appendInformationChanged(builder, resource.getType());
             }
         });
+    }
+
+    private void appendTotalSubResources(final StringBuilder builder,
+                                         final int count) {
+        builder.append("<ul>");
+        builder.append("<li>");
+        builder.append(count);
+        builder.append(" muutosta yhteensä");
+        builder.append("</li>");
+        builder.append("</ul>");
+    }
+
+    private void appendInformationChanged(final StringBuilder builder,
+                                          final String type) {
+        builder.append("<ul>");
+        builder.append("<li>");
+        final String typeLabel = resolveLocalizationForType(type);
+        builder.append(typeLabel);
+        builder.append(" tiedot ovat muuttuneet");
+        builder.append("</li>");
+        builder.append("</ul>");
     }
 
     private String resolveLocalizationForType(final String type) {
@@ -371,41 +388,76 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-    private Set<IntegrationResourceDTO> getUpdatedResourcesForAllApplications() {
+    private Set<IntegrationResourceDTO> getUpdatedContainersForAllApplications(final UUID userId) {
         final Set<IntegrationResourceDTO> updatedResources = new HashSet<>();
-        addUpdatedResourcesForApplication(APPLICATION_CODELIST, updatedResources);
-        addUpdatedResourcesForApplication(APPLICATION_DATAMODEL, updatedResources);
-        addUpdatedResourcesForApplication(APPLICATION_TERMINOLOGY, updatedResources);
-        addUpdatedResourcesForApplication(APPLICATION_COMMENTS, updatedResources);
+        addUpdatedContainersForApplication(APPLICATION_CODELIST, updatedResources, userId);
+        addUpdatedContainersForApplication(APPLICATION_DATAMODEL, updatedResources, userId);
+        addUpdatedContainersForApplication(APPLICATION_TERMINOLOGY, updatedResources, userId);
+        addUpdatedContainersForApplication(APPLICATION_COMMENTS, updatedResources, userId);
         return updatedResources;
     }
 
-    private void addUpdatedResourcesForApplication(final String applicationIdentifier,
-                                                   final Set<IntegrationResourceDTO> updatedResources) {
-        final Set<IntegrationResourceDTO> resources = getUpdatedApplicationResources(applicationIdentifier);
+    private void addUpdatedContainersForApplication(final String applicationIdentifier,
+                                                    final Set<IntegrationResourceDTO> updatedResources,
+                                                    final UUID userId) {
+        final Set<IntegrationResourceDTO> resources;
+        if (userId != null) {
+            resources = getUpdatedApplicationContainersForUserId(applicationIdentifier, userId);
+        } else {
+            resources = getUpdatedApplicationContainers(applicationIdentifier);
+        }
         if (resources != null && !resources.isEmpty()) {
             updatedResources.addAll(resources);
         }
     }
 
-    private Set<IntegrationResourceDTO> getUpdatedApplicationResources(final String applicationIdentifier) {
-        final Set<String> containerUris = resourceService.getResourceUrisForApplication(applicationIdentifier);
-        final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris, true);
-        final Set<IntegrationResourceDTO> containers = integrationResponse.getResults();
-        if (containers != null && !containers.isEmpty()) {
-            LOG.info("Found " + containers.size() + " for application " + applicationIdentifier);
-            containers.forEach(container -> {
-                final Date contentModified = container.getContentModified();
-                if (contentModified != null && contentModified.after(yesterday())) {
-                    LOG.info("Container: " + container.getUri() + " has content that has been modified lately, fetch resources");
-                    final IntegrationResponseDTO integrationResponseForResources = integrationService.getIntegrationResources(applicationIdentifier, container.getUri(), true);
-                    LOG.info("Resources for " + applicationIdentifier + " have " + integrationResponseForResources.getResults().size() + " updates.");
-                    container.setSubResourceResponse(integrationResponseForResources);
-                }
-            });
-        } else {
-            LOG.info("No containers have updates for " + applicationIdentifier);
+    private Set<IntegrationResourceDTO> getUpdatedApplicationContainersForUserId(final String applicationIdentifier,
+                                                                                 final UUID userId) {
+        final Set<String> containerUris = resourceService.getResourceUrisForApplicationAndUserId(applicationIdentifier, userId);
+        if (containerUris != null && !containerUris.isEmpty()) {
+            return getUpdatedApplicationContainersWithUris(applicationIdentifier, containerUris);
         }
-        return containers;
+        return null;
+    }
+
+    private Set<IntegrationResourceDTO> getUpdatedApplicationContainers(final String applicationIdentifier) {
+        final Set<String> containerUris = resourceService.getResourceUrisForApplication(applicationIdentifier);
+        if (containerUris != null && !containerUris.isEmpty()) {
+            return getUpdatedApplicationContainersWithUris(applicationIdentifier, containerUris);
+        }
+        return null;
+    }
+
+    private Set<IntegrationResourceDTO> getUpdatedApplicationContainersWithUris(final String applicationIdentifier,
+                                                                                final Set<String> containerUris) {
+        LOG.info("Fetching containers for: " + applicationIdentifier);
+        if (containerUris != null && !containerUris.isEmpty()) {
+            final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris, true);
+            final Set<IntegrationResourceDTO> containers = integrationResponse.getResults();
+            if (containers != null && !containers.isEmpty()) {
+                LOG.info("Found " + containers.size() + " for application: " + applicationIdentifier);
+                containers.forEach(container -> {
+                    final Date contentModified = container.getContentModified();
+                    final Date afterDate = yesterday();
+                    afterDate.setHours(5);
+                    afterDate.setMinutes(0);
+                    LOG.info("DATE afterDate: " + afterDate.toString());
+                    final IntegrationResponseDTO integrationResponseForResources;
+                    if (applicationIdentifier.equalsIgnoreCase(APPLICATION_TERMINOLOGY) || (contentModified != null && (contentModified.after(afterDate) || contentModified.equals(afterDate)))) {
+                        if (contentModified != null) {
+                            LOG.info("DATE contentModified: " + contentModified.toString());
+                        }
+                        LOG.info("Container: " + container.getUri() + " has content that has been modified lately, fetching resources.");
+                        integrationResponseForResources = integrationService.getIntegrationResources(applicationIdentifier, container.getUri(), true);
+                        LOG.info("Resources for " + applicationIdentifier + " have " + integrationResponseForResources.getResults().size() + " updates.");
+                        container.setSubResourceResponse(integrationResponseForResources);
+                    }
+                });
+                return containers;
+            } else {
+                LOG.info("No containers have updates for " + applicationIdentifier);
+            }
+        }
+        return null;
     }
 }
