@@ -210,7 +210,8 @@ public class NotificationServiceImpl implements NotificationService {
                     final Set<IntegrationResourceDTO> subResourcesWithContentChanges = new HashSet<>();
                     subResources.forEach(subResource -> {
                         final Date statusModified = subResource.getStatusModified();
-                        if (statusModified != null && statusModified.after(yesterday())) {
+                        final Date statusModifiedComparisonDate = createAfterDateForModifiedComparison();
+                        if (statusModified != null && (statusModified.after(statusModifiedComparisonDate) || statusModified.equals(statusModifiedComparisonDate))) {
                             subResourcesWithStatusChanges.add(subResource);
                         } else {
                             subResourcesWithContentChanges.add(subResource);
@@ -319,12 +320,14 @@ public class NotificationServiceImpl implements NotificationService {
         }
         builder.append("</a>");
         final Date statusModified = resource.getStatusModified();
-        if (statusModified != null && resource.getStatusModified().after(yesterday())) {
+        final Date statusModifiedComparisonDate = createAfterDateForModifiedComparison();
+        if (statusModified != null && (statusModified.after(statusModifiedComparisonDate) || statusModified.equals(statusModifiedComparisonDate))) {
             builder.append(": " + localizeStatus(resource.getStatus()));
         }
         if (APPLICATION_COMMENTS.equalsIgnoreCase(applicationIdentifier) && TYPE_COMMENTTHREAD.equalsIgnoreCase(resource.getType())) {
             final Date contentModified = resource.getContentModified();
-            if (contentModified != null && contentModified.after(yesterday())) {
+            final Date contentModifiedComparisonDate = createAfterDateForModifiedComparison();
+            if (contentModified != null && (contentModified.after(contentModifiedComparisonDate) || contentModified.equals(contentModifiedComparisonDate))) {
                 builder.append(" tietosisältöön on tullut uusia kommentteja");
             }
         }
@@ -438,15 +441,9 @@ public class NotificationServiceImpl implements NotificationService {
                 LOG.info("Found " + containers.size() + " for application: " + applicationIdentifier);
                 containers.forEach(container -> {
                     final Date contentModified = container.getContentModified();
-                    final Date afterDate = yesterday();
-                    afterDate.setHours(5);
-                    afterDate.setMinutes(0);
-                    LOG.info("DATE afterDate: " + afterDate.toString());
+                    final Date contentModifiedComparisonDate = createAfterDateForModifiedComparison();
                     final IntegrationResponseDTO integrationResponseForResources;
-                    if (applicationIdentifier.equalsIgnoreCase(APPLICATION_TERMINOLOGY) || (contentModified != null && (contentModified.after(afterDate) || contentModified.equals(afterDate)))) {
-                        if (contentModified != null) {
-                            LOG.info("DATE contentModified: " + contentModified.toString());
-                        }
+                    if (applicationIdentifier.equalsIgnoreCase(APPLICATION_TERMINOLOGY) || (contentModified != null && (contentModified.after(contentModifiedComparisonDate) || contentModified.equals(contentModifiedComparisonDate)))) {
                         LOG.info("Container: " + container.getUri() + " has content that has been modified lately, fetching resources.");
                         integrationResponseForResources = integrationService.getIntegrationResources(applicationIdentifier, container.getUri(), true);
                         LOG.info("Resources for " + applicationIdentifier + " have " + integrationResponseForResources.getResults().size() + " updates.");
