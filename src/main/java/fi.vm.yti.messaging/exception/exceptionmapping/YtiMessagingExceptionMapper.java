@@ -12,11 +12,8 @@ import fi.vm.yti.messaging.exception.YtiMessagingException;
 @Provider
 public class YtiMessagingExceptionMapper implements BaseExceptionMapper, ExceptionMapper<YtiMessagingException> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(UncaughtExceptionMapper.class);
-
     @Override
     public Response toResponse(final YtiMessagingException e) {
-        LOG.error("YtiMessagingException occurred: ", e);
         return getResponse(e);
     }
 }
