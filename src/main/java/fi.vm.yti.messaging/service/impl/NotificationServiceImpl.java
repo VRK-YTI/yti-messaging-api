@@ -23,6 +23,7 @@ import fi.vm.yti.messaging.dto.ResourceDTO;
 import fi.vm.yti.messaging.dto.UserDTO;
 import fi.vm.yti.messaging.dto.UserNotificationDTO;
 import fi.vm.yti.messaging.exception.NotFoundException;
+import fi.vm.yti.messaging.exception.NotModifiedException;
 import fi.vm.yti.messaging.service.EmailService;
 import fi.vm.yti.messaging.service.IntegrationService;
 import fi.vm.yti.messaging.service.NotificationService;
@@ -79,7 +80,7 @@ public class NotificationServiceImpl implements NotificationService {
             if (userNotification != null) {
                 sendSingleUserNotifications(user.getId(), userNotification);
             } else {
-                throw new NotFoundException();
+                throw new NotModifiedException();
             }
         } else {
             throw new NotFoundException();
