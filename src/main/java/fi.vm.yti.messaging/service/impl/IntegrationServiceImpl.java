@@ -37,7 +37,7 @@ import fi.vm.yti.messaging.exception.NotFoundException;
 import fi.vm.yti.messaging.exception.YtiMessagingException;
 import fi.vm.yti.messaging.service.IntegrationService;
 import static fi.vm.yti.messaging.api.ApiConstants.*;
-import static java.time.LocalDate.now;
+import static org.assertj.core.util.DateUtil.now;
 import static org.assertj.core.util.DateUtil.yesterday;
 
 @Service
