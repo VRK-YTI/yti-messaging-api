@@ -30,7 +30,6 @@ import fi.vm.yti.messaging.service.ResourceService;
 import fi.vm.yti.messaging.service.UserService;
 import static fi.vm.yti.messaging.api.ApiConstants.*;
 import static fi.vm.yti.messaging.util.ApplicationUtils.*;
-import static org.assertj.core.util.DateUtil.yesterday;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
@@ -418,7 +417,7 @@ public class NotificationServiceImpl implements NotificationService {
                                                                                  final UUID userId) {
         final Set<String> containerUris = resourceService.getResourceUrisForApplicationAndUserId(applicationIdentifier, userId);
         if (containerUris != null && !containerUris.isEmpty()) {
-            return getUpdatedApplicationContainersWithUris(applicationIdentifier, containerUris);
+            return getUpdatedApplicationContainersWithUris(applicationIdentifier, containerUris, true);
         }
         return null;
     }
@@ -433,9 +432,16 @@ public class NotificationServiceImpl implements NotificationService {
 
     private Set<IntegrationResourceDTO> getUpdatedApplicationContainersWithUris(final String applicationIdentifier,
                                                                                 final Set<String> containerUris) {
+        return getUpdatedApplicationContainersWithUris(applicationIdentifier, containerUris, false);
+
+    }
+
+    private Set<IntegrationResourceDTO> getUpdatedApplicationContainersWithUris(final String applicationIdentifier,
+                                                                                final Set<String> containerUris,
+                                                                                final boolean getLatest) {
         LOG.info("Fetching containers for: " + applicationIdentifier);
         if (containerUris != null && !containerUris.isEmpty()) {
-            final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris, true);
+            final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris, true, getLatest);
             final Set<IntegrationResourceDTO> containers = integrationResponse.getResults();
             if (containers != null && !containers.isEmpty()) {
                 LOG.info("Found " + containers.size() + " for application: " + applicationIdentifier);
@@ -445,7 +451,7 @@ public class NotificationServiceImpl implements NotificationService {
                     final IntegrationResponseDTO integrationResponseForResources;
                     if (applicationIdentifier.equalsIgnoreCase(APPLICATION_TERMINOLOGY) || (contentModified != null && (contentModified.after(contentModifiedComparisonDate) || contentModified.equals(contentModifiedComparisonDate)))) {
                         LOG.info("Container: " + container.getUri() + " has content that has been modified lately, fetching resources.");
-                        integrationResponseForResources = integrationService.getIntegrationResources(applicationIdentifier, container.getUri(), true);
+                        integrationResponseForResources = integrationService.getIntegrationResources(applicationIdentifier, container.getUri(), true, getLatest);
                         LOG.info("Resources for " + applicationIdentifier + " have " + integrationResponseForResources.getResults().size() + " updates.");
                         container.setSubResourceResponse(integrationResponseForResources);
                     }

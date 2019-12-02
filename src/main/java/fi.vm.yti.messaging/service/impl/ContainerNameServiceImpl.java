@@ -58,7 +58,7 @@ public class ContainerNameServiceImpl implements ContainerNameService {
         final String applicationIdentifier = getApplicationByType(type);
         final Set<String> uris = new HashSet<>();
         uris.add(uri);
-        final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, uris, false);
+        final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, uris);
         final Set<IntegrationResourceDTO> integrationResources = integrationResponse.getResults();
         if (integrationResources != null && integrationResources.isEmpty()) {
             integrationResources.forEach(this::addPrefLabel);
@@ -82,7 +82,7 @@ public class ContainerNameServiceImpl implements ContainerNameService {
             final Set<String> containerUris = new HashSet<>();
             containerResources.forEach(container -> containerUris.add(container.getUri()));
             if (!containerUris.isEmpty()) {
-                final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris, false);
+                final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris);
                 final Set<IntegrationResourceDTO> integrationResources = integrationResponse.getResults();
                 if (integrationResources != null && !integrationResources.isEmpty()) {
                     integrationResources.forEach(integrationResource -> {

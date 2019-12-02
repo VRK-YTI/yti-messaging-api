@@ -65,11 +65,17 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     public IntegrationResponseDTO getIntegrationContainers(final String applicationIdentifier,
+                                                           final Set<String> containerUris) {
+        return getIntegrationContainers(applicationIdentifier, containerUris, false, false);
+    }
+
+    public IntegrationResponseDTO getIntegrationContainers(final String applicationIdentifier,
                                                            final Set<String> containerUris,
-                                                           final boolean fetchDateRangeChanges) {
+                                                           final boolean fetchDateRangeChanges,
+                                                           final boolean getLatest) {
         final String requestUrl = resolveContainersRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration containers from: " + requestUrl);
-        final String requestBody = createContainerRequestBody(containerUris, fetchDateRangeChanges);
+        final String requestBody = createContainerRequestBody(containerUris, fetchDateRangeChanges, getLatest);
         LOG.info("Fetching integration containers request body: " + requestBody);
         final HttpEntity requestEntity = new HttpEntity<>(requestBody, createRequestHeaders());
         try {
@@ -87,10 +93,11 @@ public class IntegrationServiceImpl implements IntegrationService {
 
     public IntegrationResponseDTO getIntegrationResources(final String applicationIdentifier,
                                                           final String containerUri,
-                                                          final boolean fetchDateRangeChanges) {
+                                                          final boolean fetchDateRangeChanges,
+                                                          final boolean getLatest) {
         final String requestUrl = resolveResourcesRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration resources from: " + requestUrl);
-        final String requestBody = createResourcesRequestBody(containerUri, fetchDateRangeChanges);
+        final String requestBody = createResourcesRequestBody(containerUri, fetchDateRangeChanges, getLatest);
         final HttpEntity requestEntity = new HttpEntity<>(requestBody, createRequestHeaders());
         try {
             final ResponseEntity response = restTemplate.exchange(requestUrl, HttpMethod.POST, requestEntity, String.class);
@@ -132,11 +139,17 @@ public class IntegrationServiceImpl implements IntegrationService {
 
     private String createContainerRequestBody(final Set<String> containerUris,
                                               final boolean fetchDateRangeChanges) {
+        return createContainerRequestBody(containerUris, fetchDateRangeChanges, false);
+    }
+
+    private String createContainerRequestBody(final Set<String> containerUris,
+                                              final boolean fetchDateRangeChanges,
+                                              final boolean getLatest) {
         final ObjectMapper mapper = new CustomObjectMapper();
         final IntegrationResourceRequestDTO integrationResourceRequestDto = new IntegrationResourceRequestDTO();
         integrationResourceRequestDto.setIncludeIncomplete(true);
         if (fetchDateRangeChanges) {
-            setAfterAndBefore(integrationResourceRequestDto);
+            setAfterAndBefore(integrationResourceRequestDto, getLatest);
         }
         if (containerUris != null && !containerUris.isEmpty()) {
             integrationResourceRequestDto.setUri(new ArrayList<>(containerUris));
@@ -150,11 +163,17 @@ public class IntegrationServiceImpl implements IntegrationService {
 
     private String createResourcesRequestBody(final String container,
                                               final boolean fetchDateRangeChanges) {
+        return createResourcesRequestBody(container, fetchDateRangeChanges, false);
+    }
+
+    private String createResourcesRequestBody(final String container,
+                                              final boolean fetchDateRangeChanges,
+                                              final boolean getLatest) {
         final ObjectMapper mapper = new CustomObjectMapper();
         final IntegrationResourceRequestDTO integrationResourceRequestDto = new IntegrationResourceRequestDTO();
         integrationResourceRequestDto.setIncludeIncomplete(true);
         if (fetchDateRangeChanges) {
-            setAfterAndBefore(integrationResourceRequestDto);
+            setAfterAndBefore(integrationResourceRequestDto, getLatest);
         }
         if (container != null && !container.isEmpty()) {
             final List<String> containerUris = new ArrayList<>();
@@ -170,14 +189,17 @@ public class IntegrationServiceImpl implements IntegrationService {
         }
     }
 
-    private void setAfterAndBefore(final IntegrationResourceRequestDTO integrationResourceRequestDto) {
+    private void setAfterAndBefore(final IntegrationResourceRequestDTO integrationResourceRequestDto,
+                                   final boolean getLatest) {
         final TimeZone tz = TimeZone.getTimeZone("Europe/Helsinki");
         final DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         df.setTimeZone(tz);
-        final String before = df.format(now()) + DATE_SUFFIX;
         final String after = df.format(yesterday()) + DATE_SUFFIX;
         integrationResourceRequestDto.setAfter(after);
-        integrationResourceRequestDto.setBefore(before);
+        if (!getLatest) {
+            final String before = df.format(now()) + DATE_SUFFIX;
+            integrationResourceRequestDto.setBefore(before);
+        }
     }
 
     private String resolveRequestUrl(final String applicationIdentifier,
