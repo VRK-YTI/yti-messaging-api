@@ -60,7 +60,7 @@ public class ContainerNameServiceImpl implements ContainerNameService {
         uris.add(uri);
         final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, uris);
         final Set<IntegrationResourceDTO> integrationResources = integrationResponse.getResults();
-        if (integrationResources != null && integrationResources.isEmpty()) {
+        if (integrationResources != null && !integrationResources.isEmpty()) {
             integrationResources.forEach(this::addPrefLabel);
         }
     }
