@@ -61,7 +61,9 @@ public class AdminResource {
     @Operation(summary = "Send e-mail notifications to user.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Notifications sent successfully."),
-        @ApiResponse(responseCode = "401", description = "Authentication failed.")
+        @ApiResponse(responseCode = "304", description = "No updates for content."),
+        @ApiResponse(responseCode = "401", description = "Authentication failed."),
+        @ApiResponse(responseCode = "404", description = "User not found.")
     })
     public Response sendNotificationsToUser(@Parameter(description = "User ID to be notified.", required = true, in = ParameterIn.PATH) @PathParam("userId") final UUID userId) {
         if (authorizationManager.isSuperUser()) {
