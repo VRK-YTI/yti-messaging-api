@@ -2,6 +2,7 @@ package fi.vm.yti.messaging.service.impl;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,7 +60,7 @@ public class ContainerNameServiceImpl implements ContainerNameService {
         final Set<String> uris = new HashSet<>();
         uris.add(uri);
         final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, uris);
-        final Set<IntegrationResourceDTO> integrationResources = integrationResponse.getResults();
+        final List<IntegrationResourceDTO> integrationResources = integrationResponse.getResults();
         if (integrationResources != null && !integrationResources.isEmpty()) {
             integrationResources.forEach(this::addPrefLabel);
         }
@@ -83,7 +84,7 @@ public class ContainerNameServiceImpl implements ContainerNameService {
             containerResources.forEach(container -> containerUris.add(container.getUri()));
             if (!containerUris.isEmpty()) {
                 final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris);
-                final Set<IntegrationResourceDTO> integrationResources = integrationResponse.getResults();
+                final List<IntegrationResourceDTO> integrationResources = integrationResponse.getResults();
                 if (integrationResources != null && !integrationResources.isEmpty()) {
                     integrationResources.forEach(integrationResource -> {
                         final Map<String, String> prefLabel = integrationResource.getPrefLabel();

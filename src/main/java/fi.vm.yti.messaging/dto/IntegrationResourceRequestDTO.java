@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @XmlRootElement
-@XmlType(propOrder = { "container", "pageFrom", "pageSize", "status", "after", "before", "filter", "language", "searchTerm", "pretty", "includeIncompleteFrom", "includeIncomplete", "uri", "type" })
+@XmlType(propOrder = { "container", "pageFrom", "pageSize", "status", "after", "before", "filter", "language", "searchTerm", "pretty", "includeIncompleteFrom", "includeIncomplete", "uri", "type", "language" })
 @Schema(name = "Integration resource request DTO", description = "Integration resource request DTO that represents data for HTTP POST body in integration requests.")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IntegrationResourceRequestDTO {

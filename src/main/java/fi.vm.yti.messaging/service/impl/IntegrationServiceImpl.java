@@ -46,6 +46,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
     private static final Logger LOG = LoggerFactory.getLogger(IntegrationServiceImpl.class);
     private static final String DATE_SUFFIX = "T07:00:00.000+0200";
+    private static final String LANGUAGE_CODE_FI = "fi";
 
     private final CodelistProperties codelistProperties;
     private final DataModelProperties dataModelProperties;
@@ -77,7 +78,7 @@ public class IntegrationServiceImpl implements IntegrationService {
         final String requestUrl = resolveContainersRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration containers from: " + requestUrl);
         final String requestBody = createContainerRequestBody(containerUris, fetchDateRangeChanges, getLatest);
-        LOG.info("Fetching integration containers request body: " + requestBody);
+        LOG.info("Fetching integration containers body: " + requestBody);
         final HttpEntity requestEntity = new HttpEntity<>(requestBody, createRequestHeaders());
         try {
             final ResponseEntity response = restTemplate.exchange(requestUrl, HttpMethod.POST, requestEntity, String.class);
@@ -97,8 +98,9 @@ public class IntegrationServiceImpl implements IntegrationService {
                                                           final boolean fetchDateRangeChanges,
                                                           final boolean getLatest) {
         final String requestUrl = resolveResourcesRequestUrl(applicationIdentifier);
-        LOG.info("Fetching integration resources from: " + requestUrl);
+        LOG.debug("Fetching integration resources from: " + requestUrl);
         final String requestBody = createResourcesRequestBody(applicationIdentifier, containerUri, fetchDateRangeChanges, getLatest);
+        LOG.debug("Fetching integration resources body: " + requestBody);
         final HttpEntity requestEntity = new HttpEntity<>(requestBody, createRequestHeaders());
         try {
             final ResponseEntity response = restTemplate.exchange(requestUrl, HttpMethod.POST, requestEntity, String.class);
@@ -115,7 +117,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
     private IntegrationResponseDTO parseIntegrationResponse(final ResponseEntity response) {
         final Object responseBody = response.getBody();
-        LOG.info("Fetching integration resources: " + responseBody);
+        LOG.debug("Fetching integration resources response: " + responseBody);
         if (responseBody != null) {
             try {
                 final ObjectMapper mapper = new ObjectMapper();
@@ -142,16 +144,17 @@ public class IntegrationServiceImpl implements IntegrationService {
                                               final boolean fetchDateRangeChanges,
                                               final boolean getLatest) {
         final ObjectMapper mapper = new CustomObjectMapper();
-        final IntegrationResourceRequestDTO integrationResourceRequestDto = new IntegrationResourceRequestDTO();
-        integrationResourceRequestDto.setIncludeIncomplete(true);
+        final IntegrationResourceRequestDTO integrationResourceRequest = new IntegrationResourceRequestDTO();
+        integrationResourceRequest.setIncludeIncomplete(true);
         if (fetchDateRangeChanges) {
-            setAfterAndBefore(integrationResourceRequestDto, getLatest);
+            setAfterAndBefore(integrationResourceRequest, getLatest);
         }
         if (containerUris != null && !containerUris.isEmpty()) {
-            integrationResourceRequestDto.setUri(new ArrayList<>(containerUris));
+            integrationResourceRequest.setUri(new ArrayList<>(containerUris));
         }
+        integrationResourceRequest.setLanguage(LANGUAGE_CODE_FI);
         try {
-            return mapper.writeValueAsString(integrationResourceRequestDto);
+            return mapper.writeValueAsString(integrationResourceRequest);
         } catch (final JsonProcessingException e) {
             throw new YtiMessagingException(new ErrorModel(HttpStatus.NOT_ACCEPTABLE.value(), "Integration request body generation failed due to error: " + e.getMessage()));
         }
@@ -175,6 +178,7 @@ public class IntegrationServiceImpl implements IntegrationService {
         if (applicationIdentifier.equalsIgnoreCase(APPLICATION_CODELIST)) {
             integrationResourceRequest.setType(TYPE_CODE);
         }
+        integrationResourceRequest.setLanguage(LANGUAGE_CODE_FI);
         integrationResourceRequest.setPageFrom(0);
         integrationResourceRequest.setPageSize(RESOURCES_PAGE_SIZE);
         try {
