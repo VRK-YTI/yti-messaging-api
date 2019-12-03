@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
@@ -123,8 +124,10 @@ public class IntegrationServiceImpl implements IntegrationService {
                 final ObjectMapper mapper = new ObjectMapper();
                 mapper.setFilterProvider(new SimpleFilterProvider().setFailOnUnknownId(false));
                 final String data = responseBody.toString();
-                return mapper.readValue(data, new TypeReference<IntegrationResponseDTO>() {
+                final IntegrationResponseDTO integrationResponse = mapper.readValue(data, new TypeReference<IntegrationResponseDTO>() {
                 });
+                Collections.sort(integrationResponse.getResults());
+                return integrationResponse;
             } catch (final IOException e) {
                 throw new YtiMessagingException(new ErrorModel(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to parse integration resources!"));
             }

@@ -409,7 +409,6 @@ public class NotificationServiceImpl implements NotificationService {
         addUpdatedContainersForApplication(APPLICATION_DATAMODEL, updatedResources, userId);
         addUpdatedContainersForApplication(APPLICATION_TERMINOLOGY, updatedResources, userId);
         addUpdatedContainersForApplication(APPLICATION_COMMENTS, updatedResources, userId);
-        Collections.sort(updatedResources);
         return updatedResources;
     }
 

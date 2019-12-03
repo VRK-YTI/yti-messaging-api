@@ -149,7 +149,7 @@ public class IntegrationResourceDTO implements Serializable, Comparable<Integrat
 
     @Override
     public int compareTo(final IntegrationResourceDTO integrationResource) {
-        if (getPrefLabel() == null || integrationResource.getPrefLabel() == null) {
+        if (getPrefLabel() == null && integrationResource.getPrefLabel() == null) {
             return 0;
         }
         if (getPrefLabel("fi") != null && integrationResource.getPrefLabel("fi") != null) {
