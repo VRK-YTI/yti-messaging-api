@@ -154,6 +154,8 @@ public class IntegrationResourceDTO implements Serializable, Comparable<Integrat
         }
         if (getPrefLabel("fi") != null && integrationResource.getPrefLabel("fi") != null) {
             return getPrefLabel("fi").compareToIgnoreCase(integrationResource.getPrefLabel("fi"));
+        } else if (getPrefLabel("und") != null && integrationResource.getPrefLabel("und") != null) {
+            return getPrefLabel("und").compareToIgnoreCase(integrationResource.getPrefLabel("und"));
         }
         return 0;
     }
