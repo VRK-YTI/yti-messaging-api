@@ -37,6 +37,7 @@ import fi.vm.yti.messaging.exception.NotFoundException;
 import fi.vm.yti.messaging.exception.YtiMessagingException;
 import fi.vm.yti.messaging.service.IntegrationService;
 import static fi.vm.yti.messaging.api.ApiConstants.*;
+import static fi.vm.yti.messaging.util.ApplicationUtils.TYPE_CODE;
 import static org.assertj.core.util.DateUtil.now;
 import static org.assertj.core.util.DateUtil.yesterday;
 
@@ -97,7 +98,7 @@ public class IntegrationServiceImpl implements IntegrationService {
                                                           final boolean getLatest) {
         final String requestUrl = resolveResourcesRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration resources from: " + requestUrl);
-        final String requestBody = createResourcesRequestBody(containerUri, fetchDateRangeChanges, getLatest);
+        final String requestBody = createResourcesRequestBody(applicationIdentifier, containerUri, fetchDateRangeChanges, getLatest);
         final HttpEntity requestEntity = new HttpEntity<>(requestBody, createRequestHeaders());
         try {
             final ResponseEntity response = restTemplate.exchange(requestUrl, HttpMethod.POST, requestEntity, String.class);
@@ -138,11 +139,6 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     private String createContainerRequestBody(final Set<String> containerUris,
-                                              final boolean fetchDateRangeChanges) {
-        return createContainerRequestBody(containerUris, fetchDateRangeChanges, false);
-    }
-
-    private String createContainerRequestBody(final Set<String> containerUris,
                                               final boolean fetchDateRangeChanges,
                                               final boolean getLatest) {
         final ObjectMapper mapper = new CustomObjectMapper();
@@ -161,29 +157,28 @@ public class IntegrationServiceImpl implements IntegrationService {
         }
     }
 
-    private String createResourcesRequestBody(final String container,
-                                              final boolean fetchDateRangeChanges) {
-        return createResourcesRequestBody(container, fetchDateRangeChanges, false);
-    }
-
-    private String createResourcesRequestBody(final String container,
+    private String createResourcesRequestBody(final String applicationIdentifier,
+                                              final String container,
                                               final boolean fetchDateRangeChanges,
                                               final boolean getLatest) {
         final ObjectMapper mapper = new CustomObjectMapper();
-        final IntegrationResourceRequestDTO integrationResourceRequestDto = new IntegrationResourceRequestDTO();
-        integrationResourceRequestDto.setIncludeIncomplete(true);
+        final IntegrationResourceRequestDTO integrationResourceRequest = new IntegrationResourceRequestDTO();
+        integrationResourceRequest.setIncludeIncomplete(true);
         if (fetchDateRangeChanges) {
-            setAfterAndBefore(integrationResourceRequestDto, getLatest);
+            setAfterAndBefore(integrationResourceRequest, getLatest);
         }
         if (container != null && !container.isEmpty()) {
             final List<String> containerUris = new ArrayList<>();
             containerUris.add(container);
-            integrationResourceRequestDto.setContainer(containerUris);
+            integrationResourceRequest.setContainer(containerUris);
         }
-        integrationResourceRequestDto.setPageFrom(0);
-        integrationResourceRequestDto.setPageSize(RESOURCES_PAGE_SIZE);
+        if (applicationIdentifier.equalsIgnoreCase(APPLICATION_CODELIST)) {
+            integrationResourceRequest.setType(TYPE_CODE);
+        }
+        integrationResourceRequest.setPageFrom(0);
+        integrationResourceRequest.setPageSize(RESOURCES_PAGE_SIZE);
         try {
-            return mapper.writeValueAsString(integrationResourceRequestDto);
+            return mapper.writeValueAsString(integrationResourceRequest);
         } catch (final JsonProcessingException e) {
             throw new YtiMessagingException(new ErrorModel(HttpStatus.NOT_ACCEPTABLE.value(), "Integration request body generation failed due to error: " + e.getMessage()));
         }

@@ -13,6 +13,8 @@ public interface ApplicationUtils {
 
     String TYPE_CODELIST = "codelist";
 
+    String TYPE_CODE = "code";
+
     String TYPE_LIBRARY = "library";
 
     String TYPE_PROFILE = "profile";
