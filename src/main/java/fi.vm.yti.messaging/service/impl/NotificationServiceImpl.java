@@ -323,10 +323,12 @@ public class NotificationServiceImpl implements NotificationService {
             builder.append(": " + localizeStatus(resource.getStatus()));
         }
         final String type = resource.getType();
-        final Date modified = resource.getModified();
-        if (isContainerType(type) && modified != null && (modified.after(modifiedComparisonDate) || modified.equals(modifiedComparisonDate))) {
+        if (isContainerType(type)) {
             builder.append("<ul>");
-            appendInformationChanged(builder, type);
+            final Date modified = resource.getModified();
+            if (modified != null && (modified.after(modifiedComparisonDate) || modified.equals(modifiedComparisonDate))) {
+                appendInformationChanged(builder, type);
+            }
         } else if (APPLICATION_COMMENTS.equalsIgnoreCase(applicationIdentifier) && TYPE_COMMENTTHREAD.equalsIgnoreCase(type)) {
             final Date contentModified = resource.getContentModified();
             final Date contentModifiedComparisonDate = createAfterDateForModifiedComparison();
