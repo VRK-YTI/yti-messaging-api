@@ -174,7 +174,7 @@ public class NotificationServiceImpl implements NotificationService {
         builder.append("<body>");
         builder.append("Hyvä käyttäjä,<br/>");
         builder.append("<br/>");
-        builder.append("Saat tämän viestin, koska olet tilannut muutosviestit Yhteentoimivuusalustalta yhdestä tai useammasta sisällöstä. Voit perua tilauksen työkaluista <a href=\"https://vrk-ewiki.eden.csc.fi/pages/viewpage.action?pageId=21779517\">Käyttäjätiedot</a>-osiossa.");
+        builder.append("Saat tämän viestin, koska olet tilannut muutosviestit Yhteentoimivuusalustalta yhdestä tai useammasta sisällöstä. Voit perua tilauksen työkaluista Käyttäjätiedot-osiossa. Katso ohjeet <a href=\"https://vrk-ewiki.eden.csc.fi/pages/viewpage.action?pageId=61252403\">täältä</a>.");
         builder.append("<br/>");
         final List<IntegrationResourceDTO> terminologyUpdates = userNotificationDto.getTerminologyResources();
         final List<IntegrationResourceDTO> codelistUpdates = userNotificationDto.getCodelistResources();
