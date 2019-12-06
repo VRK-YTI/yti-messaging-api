@@ -11,12 +11,12 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import fi.vm.yti.messaging.api.Meta;
 import fi.vm.yti.messaging.configuration.MessagingServiceProperties;

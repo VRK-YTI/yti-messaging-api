@@ -5,9 +5,9 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import fi.vm.yti.messaging.dao.ResourceDao;
 import fi.vm.yti.messaging.dao.UserDao;
