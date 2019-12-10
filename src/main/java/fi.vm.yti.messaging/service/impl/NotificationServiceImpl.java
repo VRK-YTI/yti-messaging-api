@@ -244,11 +244,16 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private void appendInformationChanged(final StringBuilder builder,
-                                          final String type) {
+                                          final String type,
+                                          final boolean statusHasChanged) {
         builder.append("<li>");
         final String typeLabel = resolveLocalizationForType(type);
         builder.append(typeLabel);
-        builder.append(" tiedot ovat muuttuneet");
+        if (statusHasChanged) {
+            builder.append(" tiedot ja tila ovat muuttuneet");
+        } else {
+            builder.append(" tiedot ovat muuttuneet");
+        }
         builder.append("</li>");
     }
 
@@ -318,16 +323,16 @@ public class NotificationServiceImpl implements NotificationService {
         }
         builder.append("</a>");
         final Date modifiedComparisonDate = createAfterDateForModifiedComparison();
-        final Date statusModified = resource.getStatusModified();
-        if (statusModified != null && (statusModified.after(modifiedComparisonDate) || statusModified.equals(modifiedComparisonDate))) {
-            builder.append(": " + localizeStatus(resource.getStatus()));
-        }
+        builder.append(": " + localizeStatus(resource.getStatus()));
         final String type = resource.getType();
         if (isContainerType(type)) {
             builder.append("<ul>");
             final Date modified = resource.getModified();
-            if (modified != null && (modified.after(modifiedComparisonDate) || modified.equals(modifiedComparisonDate))) {
-                appendInformationChanged(builder, type);
+            final Date statusModified = resource.getStatusModified();
+            if (statusModified != null && (statusModified.after(modifiedComparisonDate) || statusModified.equals(modifiedComparisonDate))) {
+                appendInformationChanged(builder, type, true);
+            } else if (modified != null && (modified.after(modifiedComparisonDate) || modified.equals(modifiedComparisonDate))) {
+                appendInformationChanged(builder, type, false);
             }
         } else if (APPLICATION_COMMENTS.equalsIgnoreCase(applicationIdentifier) && TYPE_COMMENTTHREAD.equalsIgnoreCase(type)) {
             final Date contentModified = resource.getContentModified();
