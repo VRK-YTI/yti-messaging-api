@@ -1,13 +1,13 @@
 package fi.vm.yti.messaging.dto;
 
-import java.util.Set;
+import java.util.List;
 
 import fi.vm.yti.messaging.api.Meta;
 
 public class IntegrationResponseDTO {
 
     private Meta meta;
-    private Set<IntegrationResourceDTO> results;
+    private List<IntegrationResourceDTO> results;
 
     public IntegrationResponseDTO() {
     }
@@ -20,11 +20,11 @@ public class IntegrationResponseDTO {
         this.meta = meta;
     }
 
-    public Set<IntegrationResourceDTO> getResults() {
+    public List<IntegrationResourceDTO> getResults() {
         return results;
     }
 
-    public void setResults(final Set<IntegrationResourceDTO> results) {
+    public void setResults(final List<IntegrationResourceDTO> results) {
         this.results = results;
     }
 }

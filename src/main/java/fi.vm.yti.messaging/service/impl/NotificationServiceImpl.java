@@ -1,19 +1,22 @@
 package fi.vm.yti.messaging.service.impl;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import fi.vm.yti.messaging.api.Meta;
 import fi.vm.yti.messaging.configuration.MessagingServiceProperties;
@@ -23,6 +26,7 @@ import fi.vm.yti.messaging.dto.ResourceDTO;
 import fi.vm.yti.messaging.dto.UserDTO;
 import fi.vm.yti.messaging.dto.UserNotificationDTO;
 import fi.vm.yti.messaging.exception.NotFoundException;
+import fi.vm.yti.messaging.exception.NotModifiedException;
 import fi.vm.yti.messaging.service.EmailService;
 import fi.vm.yti.messaging.service.IntegrationService;
 import fi.vm.yti.messaging.service.NotificationService;
@@ -30,7 +34,6 @@ import fi.vm.yti.messaging.service.ResourceService;
 import fi.vm.yti.messaging.service.UserService;
 import static fi.vm.yti.messaging.api.ApiConstants.*;
 import static fi.vm.yti.messaging.util.ApplicationUtils.*;
-import static org.assertj.core.util.DateUtil.yesterday;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
@@ -62,7 +65,7 @@ public class NotificationServiceImpl implements NotificationService {
         this.messagingServiceProperties = messagingServiceProperties;
     }
 
-    @Scheduled(cron = "0 0 0 * * *", zone = "Europe/Helsinki")
+    @Scheduled(cron = "0 0 7 * * *", zone = "Europe/Helsinki")
     @Transactional
     public void sendAllNotifications() {
         LOG.info("Sending scheduled notifications!");
@@ -75,11 +78,12 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendUserNotifications(final UUID userId) {
         final UserDTO user = userService.findById(userId);
         if (user != null && SUBSCRIPTION_TYPE_DAILY.equalsIgnoreCase(user.getSubscriptionType())) {
-            // TODO: Optimize and check only this users resources for updates!
-            final Map<String, IntegrationResourceDTO> updatedResourcesMap = fetchAndMapUpdatedResources();
+            final Map<String, IntegrationResourceDTO> updatedResourcesMap = fetchAndMapUpdatedResourcesForUser(userId);
             final UserNotificationDTO userNotification = mapUserNotificationResource(user, updatedResourcesMap);
             if (userNotification != null) {
                 sendSingleUserNotifications(user.getId(), userNotification);
+            } else {
+                throw new NotModifiedException();
             }
         } else {
             throw new NotFoundException();
@@ -87,8 +91,12 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private Map<String, IntegrationResourceDTO> fetchAndMapUpdatedResources() {
+        return fetchAndMapUpdatedResourcesForUser(null);
+    }
+
+    private Map<String, IntegrationResourceDTO> fetchAndMapUpdatedResourcesForUser(final UUID userId) {
         final Map<String, IntegrationResourceDTO> updatedResourcesMap = new HashMap<>();
-        final Set<IntegrationResourceDTO> allUpdates = getUpdatedResourcesForAllApplications();
+        final List<IntegrationResourceDTO> allUpdates = getUpdatedContainersForAllApplications(userId);
         allUpdates.forEach(updatedResource -> updatedResourcesMap.put(updatedResource.getUri(), updatedResource));
         return updatedResourcesMap;
     }
@@ -111,10 +119,10 @@ public class NotificationServiceImpl implements NotificationService {
                                                             final Map<String, IntegrationResourceDTO> updatedResourcesMap) {
         final Set<ResourceDTO> resources = user.getResources();
         if (resources != null && !resources.isEmpty()) {
-            final Set<IntegrationResourceDTO> codeListUpdates = new HashSet<>();
-            final Set<IntegrationResourceDTO> dataModelUpdates = new HashSet<>();
-            final Set<IntegrationResourceDTO> terminologyUpdates = new HashSet<>();
-            final Set<IntegrationResourceDTO> commentsUpdates = new HashSet<>();
+            final List<IntegrationResourceDTO> codeListUpdates = new ArrayList<>();
+            final List<IntegrationResourceDTO> dataModelUpdates = new ArrayList<>();
+            final List<IntegrationResourceDTO> terminologyUpdates = new ArrayList<>();
+            final List<IntegrationResourceDTO> commentsUpdates = new ArrayList<>();
             for (final ResourceDTO resource : resources) {
                 final String resourceUri = resource.getUri();
                 if (updatedResourcesMap.keySet().contains(resourceUri)) {
@@ -136,6 +144,10 @@ public class NotificationServiceImpl implements NotificationService {
                     }
                 }
             }
+            Collections.sort(codeListUpdates);
+            Collections.sort(dataModelUpdates);
+            Collections.sort(terminologyUpdates);
+            Collections.sort(commentsUpdates);
             UserNotificationDTO userNotificationDto = null;
             if (!codeListUpdates.isEmpty() || !dataModelUpdates.isEmpty() || !terminologyUpdates.isEmpty() || !commentsUpdates.isEmpty()) {
                 userNotificationDto = new UserNotificationDTO(codeListUpdates, dataModelUpdates, terminologyUpdates, commentsUpdates);
@@ -162,13 +174,12 @@ public class NotificationServiceImpl implements NotificationService {
         builder.append("<body>");
         builder.append("Hyvä käyttäjä,<br/>");
         builder.append("<br/>");
-        builder.append("Saat tämän viestin, koska olet tilannut muutosviestit Yhteentoimivuusalustalta yhdestä tai useammasta sisällöstä.");
-        builder.append("Voit perua tilauksen työkaluista <a href=\"https://vrk-ewiki.eden.csc.fi/pages/viewpage.action?pageId=21779517\">Käyttäjätiedot</a>-osiossa.");
+        builder.append("Saat tämän viestin, koska olet tilannut muutosviestit Yhteentoimivuusalustalta yhdestä tai useammasta sisällöstä. Voit perua tilauksen työkaluista Käyttäjätiedot-osiossa. Katso ohjeet <a href=\"https://vrk-ewiki.eden.csc.fi/pages/viewpage.action?pageId=61252403\">täältä</a>.");
         builder.append("<br/>");
-        final Set<IntegrationResourceDTO> terminologyUpdates = userNotificationDto.getTerminologyResources();
-        final Set<IntegrationResourceDTO> codelistUpdates = userNotificationDto.getCodelistResources();
-        final Set<IntegrationResourceDTO> datamodelUpdates = userNotificationDto.getDatamodelResouces();
-        final Set<IntegrationResourceDTO> commentsUpdates = userNotificationDto.getCommentsResources();
+        final List<IntegrationResourceDTO> terminologyUpdates = userNotificationDto.getTerminologyResources();
+        final List<IntegrationResourceDTO> codelistUpdates = userNotificationDto.getCodelistResources();
+        final List<IntegrationResourceDTO> datamodelUpdates = userNotificationDto.getDatamodelResouces();
+        final List<IntegrationResourceDTO> commentsUpdates = userNotificationDto.getCommentsResources();
         if (!terminologyUpdates.isEmpty()) {
             builder.append("<h3>Sanastot</h3>");
             addResourceUpdates(APPLICATION_TERMINOLOGY, builder, terminologyUpdates);
@@ -194,18 +205,19 @@ public class NotificationServiceImpl implements NotificationService {
 
     private void addResourceUpdates(final String applicationIdentifier,
                                     final StringBuilder builder,
-                                    final Set<IntegrationResourceDTO> resources) {
+                                    final List<IntegrationResourceDTO> resources) {
         resources.forEach(resource -> {
             addResourceToBuilder(false, applicationIdentifier, builder, resource);
             final IntegrationResponseDTO subResourceResponse = resource.getSubResourceResponse();
             if (subResourceResponse != null) {
-                final Set<IntegrationResourceDTO> subResources = subResourceResponse.getResults();
+                final List<IntegrationResourceDTO> subResources = subResourceResponse.getResults();
                 if (subResources != null && !subResources.isEmpty()) {
-                    final Set<IntegrationResourceDTO> subResourcesWithStatusChanges = new HashSet<>();
-                    final Set<IntegrationResourceDTO> subResourcesWithContentChanges = new HashSet<>();
+                    final Set<IntegrationResourceDTO> subResourcesWithStatusChanges = new LinkedHashSet<>();
+                    final Set<IntegrationResourceDTO> subResourcesWithContentChanges = new LinkedHashSet<>();
                     subResources.forEach(subResource -> {
                         final Date statusModified = subResource.getStatusModified();
-                        if (statusModified != null && statusModified.after(yesterday())) {
+                        final Date statusModifiedComparisonDate = createAfterDateForModifiedComparison();
+                        if (statusModified != null && (statusModified.after(statusModifiedComparisonDate) || statusModified.equals(statusModifiedComparisonDate))) {
                             subResourcesWithStatusChanges.add(subResource);
                         } else {
                             subResourcesWithContentChanges.add(subResource);
@@ -214,25 +226,30 @@ public class NotificationServiceImpl implements NotificationService {
                     addSubResourcesWithStatusChanges(applicationIdentifier, builder, subResourcesWithStatusChanges);
                     addSubResourcesWithContentChanges(applicationIdentifier, builder, subResourcesWithContentChanges);
                     final Meta meta = subResourceResponse.getMeta();
-                    if (meta != null && meta.getTotalResults() > 0) {
-                        builder.append("<ul>");
-                        builder.append("<li>");
-                        builder.append(meta.getTotalResults());
-                        builder.append(" muutosta yhteensä");
-                        builder.append("</li>");
-                        builder.append("</ul>");
+                    if (meta != null && meta.getTotalResults() > RESOURCES_PAGE_SIZE) {
+                        appendTotalSubResources(builder, meta.getTotalResults());
                     }
-                } else {
-                    builder.append("<ul>");
-                    builder.append("<li>");
-                    final String typeLabel = resolveLocalizationForType(resource.getType());
-                    builder.append(typeLabel);
-                    builder.append(" tiedot ovat muuttuneet");
-                    builder.append("</li>");
-                    builder.append("</ul>");
                 }
             }
+            builder.append("</ul>");
         });
+    }
+
+    private void appendTotalSubResources(final StringBuilder builder,
+                                         final int count) {
+        builder.append("<li>");
+        builder.append(count);
+        builder.append(" muutosta yhteensä");
+        builder.append("</li>");
+    }
+
+    private void appendInformationChanged(final StringBuilder builder,
+                                          final String type) {
+        builder.append("<li>");
+        final String typeLabel = resolveLocalizationForType(type);
+        builder.append(typeLabel);
+        builder.append(" tiedot ovat muuttuneet");
+        builder.append("</li>");
     }
 
     private String resolveLocalizationForType(final String type) {
@@ -261,11 +278,9 @@ public class NotificationServiceImpl implements NotificationService {
                                                   final StringBuilder builder,
                                                   final Set<IntegrationResourceDTO> resources) {
         if (resources != null && !resources.isEmpty()) {
-            builder.append("<ul>");
-            builder.append("<li>muuttuneet tiedot ja tilat</li>");
+            builder.append("<li>muuttuneet resurssit ja tilat</li>");
             builder.append("<ul>");
             resources.forEach(resource -> addResourceToBuilder(true, applicationIdentifier, builder, resource));
-            builder.append("</ul>");
             builder.append("</ul>");
         }
     }
@@ -274,11 +289,9 @@ public class NotificationServiceImpl implements NotificationService {
                                                    final StringBuilder builder,
                                                    final Set<IntegrationResourceDTO> resources) {
         if (resources != null && !resources.isEmpty()) {
-            builder.append("<ul>");
-            builder.append("<li>muuttuneet tiedot</li>");
+            builder.append("<li>muuttuneet resurssit</li>");
             builder.append("<ul>");
             resources.forEach(resource -> addResourceToBuilder(true, applicationIdentifier, builder, resource));
-            builder.append("</ul>");
             builder.append("</ul>");
         }
     }
@@ -288,32 +301,48 @@ public class NotificationServiceImpl implements NotificationService {
                                       final StringBuilder builder,
                                       final IntegrationResourceDTO resource) {
         final String prefLabel = getPrefLabelValueForEmail(resource.getPrefLabel());
+        final String localName = resource.getLocalName();
         final String resourceUri = resource.getUri();
         if (wrapToList) {
             builder.append("<li>");
         }
         builder.append("<a href=");
-        builder.append(embedEnvironmentToUri(resourceUri));
+        builder.append(encodeAndEmbedEnvironmentToUri(resourceUri));
         builder.append(">");
         if (prefLabel != null) {
             builder.append(prefLabel);
+        } else if (localName != null) {
+            builder.append(localName);
         } else {
             builder.append(resourceUri);
         }
         builder.append("</a>");
+        final Date modifiedComparisonDate = createAfterDateForModifiedComparison();
         final Date statusModified = resource.getStatusModified();
-        if (statusModified != null && resource.getStatusModified().after(yesterday())) {
+        if (statusModified != null && (statusModified.after(modifiedComparisonDate) || statusModified.equals(modifiedComparisonDate))) {
             builder.append(": " + localizeStatus(resource.getStatus()));
         }
-        if (APPLICATION_COMMENTS.equalsIgnoreCase(applicationIdentifier) && TYPE_COMMENTTHREAD.equalsIgnoreCase(resource.getType())) {
+        final String type = resource.getType();
+        if (isContainerType(type)) {
+            builder.append("<ul>");
+            final Date modified = resource.getModified();
+            if (modified != null && (modified.after(modifiedComparisonDate) || modified.equals(modifiedComparisonDate))) {
+                appendInformationChanged(builder, type);
+            }
+        } else if (APPLICATION_COMMENTS.equalsIgnoreCase(applicationIdentifier) && TYPE_COMMENTTHREAD.equalsIgnoreCase(type)) {
             final Date contentModified = resource.getContentModified();
-            if (contentModified != null && contentModified.after(yesterday())) {
+            final Date contentModifiedComparisonDate = createAfterDateForModifiedComparison();
+            if (contentModified != null && (contentModified.after(contentModifiedComparisonDate) || contentModified.equals(contentModifiedComparisonDate))) {
                 builder.append(" tietosisältöön on tullut uusia kommentteja");
             }
         }
         if (wrapToList) {
             builder.append("</li>");
         }
+    }
+
+    private boolean isContainerType(final String type) {
+        return TYPE_CODELIST.equalsIgnoreCase(type) || TYPE_COMMENTROUND.equalsIgnoreCase(type) || TYPE_LIBRARY.equalsIgnoreCase(type) || TYPE_PROFILE.equalsIgnoreCase(type) || TYPE_TERMINOLOGY.equalsIgnoreCase(type);
     }
 
     private String getPrefLabelValueForEmail(final Map<String, String> prefLabel) {
@@ -362,50 +391,91 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-    private String embedEnvironmentToUri(final String uri) {
+    private String encodeAndEmbedEnvironmentToUri(final String uri) {
         final String env = messagingServiceProperties.getEnv();
+        final String encodedUri = encodeUri(uri);
         if ("awsprod".equalsIgnoreCase(env)) {
-            return uri;
+            return encodedUri;
         } else {
-            return uri + "?env=" + env;
+            return encodedUri + "?env=" + env;
         }
     }
 
-    private Set<IntegrationResourceDTO> getUpdatedResourcesForAllApplications() {
-        final Set<IntegrationResourceDTO> updatedResources = new HashSet<>();
-        addUpdatedResourcesForApplication(APPLICATION_CODELIST, updatedResources);
-        addUpdatedResourcesForApplication(APPLICATION_DATAMODEL, updatedResources);
-        addUpdatedResourcesForApplication(APPLICATION_TERMINOLOGY, updatedResources);
-        addUpdatedResourcesForApplication(APPLICATION_COMMENTS, updatedResources);
+    private String encodeUri(final String uri) {
+        return uri.replace("#", "%23");
+    }
+
+    private List<IntegrationResourceDTO> getUpdatedContainersForAllApplications(final UUID userId) {
+        final List<IntegrationResourceDTO> updatedResources = new ArrayList<>();
+        addUpdatedContainersForApplication(APPLICATION_CODELIST, updatedResources, userId);
+        addUpdatedContainersForApplication(APPLICATION_DATAMODEL, updatedResources, userId);
+        addUpdatedContainersForApplication(APPLICATION_TERMINOLOGY, updatedResources, userId);
+        addUpdatedContainersForApplication(APPLICATION_COMMENTS, updatedResources, userId);
         return updatedResources;
     }
 
-    private void addUpdatedResourcesForApplication(final String applicationIdentifier,
-                                                   final Set<IntegrationResourceDTO> updatedResources) {
-        final Set<IntegrationResourceDTO> resources = getUpdatedApplicationResources(applicationIdentifier);
+    private void addUpdatedContainersForApplication(final String applicationIdentifier,
+                                                    final List<IntegrationResourceDTO> updatedResources,
+                                                    final UUID userId) {
+        final List<IntegrationResourceDTO> resources;
+        if (userId != null) {
+            resources = getUpdatedApplicationContainersForUserId(applicationIdentifier, userId);
+        } else {
+            resources = getUpdatedApplicationContainers(applicationIdentifier);
+        }
         if (resources != null && !resources.isEmpty()) {
             updatedResources.addAll(resources);
         }
     }
 
-    private Set<IntegrationResourceDTO> getUpdatedApplicationResources(final String applicationIdentifier) {
-        final Set<String> containerUris = resourceService.getResourceUrisForApplication(applicationIdentifier);
-        final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris, true);
-        final Set<IntegrationResourceDTO> containers = integrationResponse.getResults();
-        if (containers != null && !containers.isEmpty()) {
-            LOG.info("Found " + containers.size() + " for application " + applicationIdentifier);
-            containers.forEach(container -> {
-                final Date contentModified = container.getContentModified();
-                if (contentModified != null && contentModified.after(yesterday())) {
-                    LOG.info("Container: " + container.getUri() + " has content that has been modified lately, fetch resources");
-                    final IntegrationResponseDTO integrationResponseForResources = integrationService.getIntegrationResources(applicationIdentifier, container.getUri(), true);
-                    LOG.info("Resources for " + applicationIdentifier + " have " + integrationResponseForResources.getResults().size() + " updates.");
-                    container.setSubResourceResponse(integrationResponseForResources);
-                }
-            });
-        } else {
-            LOG.info("No containers have updates for " + applicationIdentifier);
+    private List<IntegrationResourceDTO> getUpdatedApplicationContainersForUserId(final String applicationIdentifier,
+                                                                                  final UUID userId) {
+        final Set<String> containerUris = resourceService.getResourceUrisForApplicationAndUserId(applicationIdentifier, userId);
+        if (containerUris != null && !containerUris.isEmpty()) {
+            return getUpdatedApplicationContainersWithUris(applicationIdentifier, containerUris, true);
         }
-        return containers;
+        return null;
+    }
+
+    private List<IntegrationResourceDTO> getUpdatedApplicationContainers(final String applicationIdentifier) {
+        final Set<String> containerUris = resourceService.getResourceUrisForApplication(applicationIdentifier);
+        if (containerUris != null && !containerUris.isEmpty()) {
+            return getUpdatedApplicationContainersWithUris(applicationIdentifier, containerUris);
+        }
+        return null;
+    }
+
+    private List<IntegrationResourceDTO> getUpdatedApplicationContainersWithUris(final String applicationIdentifier,
+                                                                                 final Set<String> containerUris) {
+        return getUpdatedApplicationContainersWithUris(applicationIdentifier, containerUris, false);
+
+    }
+
+    private List<IntegrationResourceDTO> getUpdatedApplicationContainersWithUris(final String applicationIdentifier,
+                                                                                 final Set<String> containerUris,
+                                                                                 final boolean getLatest) {
+        LOG.info("Fetching containers for: " + applicationIdentifier);
+        if (containerUris != null && !containerUris.isEmpty()) {
+            final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris, true, getLatest);
+            final List<IntegrationResourceDTO> containers = integrationResponse.getResults();
+            if (containers != null && !containers.isEmpty()) {
+                LOG.info("Found " + containers.size() + " for application: " + applicationIdentifier);
+                containers.forEach(container -> {
+                    final Date contentModified = container.getContentModified();
+                    final Date contentModifiedComparisonDate = createAfterDateForModifiedComparison();
+                    final IntegrationResponseDTO integrationResponseForResources;
+                    if (applicationIdentifier.equalsIgnoreCase(APPLICATION_TERMINOLOGY) || (contentModified != null && (contentModified.after(contentModifiedComparisonDate) || contentModified.equals(contentModifiedComparisonDate)))) {
+                        LOG.info("Container: " + container.getUri() + " has content that has been modified lately, fetching resources.");
+                        integrationResponseForResources = integrationService.getIntegrationResources(applicationIdentifier, container.getUri(), true, getLatest);
+                        LOG.info("Resources for " + applicationIdentifier + " have " + integrationResponseForResources.getResults().size() + " updates.");
+                        container.setSubResourceResponse(integrationResponseForResources);
+                    }
+                });
+                return containers;
+            } else {
+                LOG.info("No containers have updates for " + applicationIdentifier);
+            }
+        }
+        return null;
     }
 }

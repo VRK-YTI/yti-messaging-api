@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @XmlType(propOrder = { "uri", "type", "prefLabel", "description", "localName", "status", "modified", "statusModified", "contentModified", "type", "subResourceResponse" })
 @Schema(name = "Integration resource", description = "Integration resource DTO that represents data for one single Container or Resource for integration use.")
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class IntegrationResourceDTO implements Serializable {
+public class IntegrationResourceDTO implements Serializable, Comparable<IntegrationResourceDTO> {
 
     private static final long serialVersionUID = 1L;
 
@@ -65,6 +65,9 @@ public class IntegrationResourceDTO implements Serializable {
         String prefLabelValue = null;
         if (this.prefLabel != null && !this.prefLabel.isEmpty()) {
             prefLabelValue = this.prefLabel.get(language);
+            if (prefLabelValue == null) {
+                prefLabelValue = this.prefLabel.get("sv");
+            }
             if (prefLabelValue == null) {
                 prefLabelValue = this.prefLabel.get("en");
             }
@@ -142,5 +145,18 @@ public class IntegrationResourceDTO implements Serializable {
 
     public void setSubResourceResponse(final IntegrationResponseDTO subResourceResponse) {
         this.subResourceResponse = subResourceResponse;
+    }
+
+    @Override
+    public int compareTo(final IntegrationResourceDTO integrationResource) {
+        if (getPrefLabel() == null && integrationResource.getPrefLabel() == null) {
+            return 0;
+        }
+        if (getPrefLabel("fi") != null && integrationResource.getPrefLabel("fi") != null) {
+            return getPrefLabel("fi").compareToIgnoreCase(integrationResource.getPrefLabel("fi"));
+        } else if (getPrefLabel("und") != null && integrationResource.getPrefLabel("und") != null) {
+            return getPrefLabel("und").compareToIgnoreCase(integrationResource.getPrefLabel("und"));
+        }
+        return 0;
     }
 }

@@ -1,6 +1,7 @@
 package fi.vm.yti.messaging.dao.impl;
 
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -36,16 +37,17 @@ public class ResourceDaoImpl implements ResourceDao {
         }
     }
 
-    public Set<Resource> findByApplication(final String application) {
-        return resourceRepository.findByApplication(application);
+    public Set<Resource> findByApplication(final String applicationIdentifier) {
+        return resourceRepository.findByApplication(applicationIdentifier);
     }
 
-    public Set<String> findUrisByApplication(final String application) {
-        return resourceRepository.findUrisByApplication(application);
+    public Set<String> findUrisByApplication(final String applicationIdentifier) {
+        return resourceRepository.findUrisByApplication(applicationIdentifier);
     }
 
-    public Resource findByUri(final String uri) {
-        return resourceRepository.findByUri(uri);
+    public Set<String> findUrisByApplicationAndUserId(final String applicationIdentifier,
+                                                      final UUID userId) {
+        return resourceRepository.findUrisByApplicationAndUserId(applicationIdentifier, userId);
     }
 
     private Resource createResource(final String uri,

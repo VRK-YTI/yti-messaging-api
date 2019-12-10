@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
@@ -37,13 +38,17 @@ import fi.vm.yti.messaging.exception.NotFoundException;
 import fi.vm.yti.messaging.exception.YtiMessagingException;
 import fi.vm.yti.messaging.service.IntegrationService;
 import static fi.vm.yti.messaging.api.ApiConstants.*;
-import static org.assertj.core.util.DateUtil.tomorrow;
+import static fi.vm.yti.messaging.util.ApplicationUtils.TYPE_CODE;
+import static org.assertj.core.util.DateUtil.now;
 import static org.assertj.core.util.DateUtil.yesterday;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
 
     private static final Logger LOG = LoggerFactory.getLogger(IntegrationServiceImpl.class);
+    private static final String DATE_SUFFIX = "T07:00:00.000+0200";
+    private static final String LANGUAGE_CODE_FI = "fi";
+
     private final CodelistProperties codelistProperties;
     private final DataModelProperties dataModelProperties;
     private final TerminologyProperties terminologyProperties;
@@ -63,12 +68,18 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     public IntegrationResponseDTO getIntegrationContainers(final String applicationIdentifier,
+                                                           final Set<String> containerUris) {
+        return getIntegrationContainers(applicationIdentifier, containerUris, false, false);
+    }
+
+    public IntegrationResponseDTO getIntegrationContainers(final String applicationIdentifier,
                                                            final Set<String> containerUris,
-                                                           final boolean fetchDateRangeChanges) {
+                                                           final boolean fetchDateRangeChanges,
+                                                           final boolean getLatest) {
         final String requestUrl = resolveContainersRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration containers from: " + requestUrl);
-        final String requestBody = createContainerRequestBody(applicationIdentifier, containerUris, fetchDateRangeChanges);
-        LOG.info("Fetching integration containers request body: " + requestBody);
+        final String requestBody = createContainerRequestBody(containerUris, fetchDateRangeChanges, getLatest);
+        LOG.info("Fetching integration containers body: " + requestBody);
         final HttpEntity requestEntity = new HttpEntity<>(requestBody, createRequestHeaders());
         try {
             final ResponseEntity response = restTemplate.exchange(requestUrl, HttpMethod.POST, requestEntity, String.class);
@@ -85,10 +96,12 @@ public class IntegrationServiceImpl implements IntegrationService {
 
     public IntegrationResponseDTO getIntegrationResources(final String applicationIdentifier,
                                                           final String containerUri,
-                                                          final boolean fetchDateRangeChanges) {
+                                                          final boolean fetchDateRangeChanges,
+                                                          final boolean getLatest) {
         final String requestUrl = resolveResourcesRequestUrl(applicationIdentifier);
-        LOG.info("Fetching integration resources from: " + requestUrl);
-        final String requestBody = createResourcesRequestBody(containerUri, fetchDateRangeChanges);
+        LOG.debug("Fetching integration resources from: " + requestUrl);
+        final String requestBody = createResourcesRequestBody(applicationIdentifier, containerUri, fetchDateRangeChanges, getLatest);
+        LOG.debug("Fetching integration resources body: " + requestBody);
         final HttpEntity requestEntity = new HttpEntity<>(requestBody, createRequestHeaders());
         try {
             final ResponseEntity response = restTemplate.exchange(requestUrl, HttpMethod.POST, requestEntity, String.class);
@@ -105,14 +118,16 @@ public class IntegrationServiceImpl implements IntegrationService {
 
     private IntegrationResponseDTO parseIntegrationResponse(final ResponseEntity response) {
         final Object responseBody = response.getBody();
-        LOG.info("Fetching integration resources: " + responseBody);
+        LOG.debug("Fetching integration resources response: " + responseBody);
         if (responseBody != null) {
             try {
                 final ObjectMapper mapper = new ObjectMapper();
                 mapper.setFilterProvider(new SimpleFilterProvider().setFailOnUnknownId(false));
                 final String data = responseBody.toString();
-                return mapper.readValue(data, new TypeReference<IntegrationResponseDTO>() {
+                final IntegrationResponseDTO integrationResponse = mapper.readValue(data, new TypeReference<IntegrationResponseDTO>() {
                 });
+                Collections.sort(integrationResponse.getResults());
+                return integrationResponse;
             } catch (final IOException e) {
                 throw new YtiMessagingException(new ErrorModel(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to parse integration resources!"));
             }
@@ -128,56 +143,65 @@ public class IntegrationServiceImpl implements IntegrationService {
         return requestHeaders;
     }
 
-    private String createContainerRequestBody(final String applicationIdentifier,
-                                              final Set<String> containerUris,
-                                              final boolean fetchDateRangeChanges) {
+    private String createContainerRequestBody(final Set<String> containerUris,
+                                              final boolean fetchDateRangeChanges,
+                                              final boolean getLatest) {
         final ObjectMapper mapper = new CustomObjectMapper();
-        final IntegrationResourceRequestDTO integrationResourceRequestDto = new IntegrationResourceRequestDTO();
-        integrationResourceRequestDto.setIncludeIncomplete(true);
+        final IntegrationResourceRequestDTO integrationResourceRequest = new IntegrationResourceRequestDTO();
+        integrationResourceRequest.setIncludeIncomplete(true);
         if (fetchDateRangeChanges) {
-            setAfterAndBefore(integrationResourceRequestDto);
+            setAfterAndBefore(integrationResourceRequest, getLatest);
         }
         if (containerUris != null && !containerUris.isEmpty()) {
-            integrationResourceRequestDto.setUri(new ArrayList<>(containerUris));
+            integrationResourceRequest.setUri(new ArrayList<>(containerUris));
         }
+        integrationResourceRequest.setLanguage(LANGUAGE_CODE_FI);
         try {
-            return mapper.writeValueAsString(integrationResourceRequestDto);
+            return mapper.writeValueAsString(integrationResourceRequest);
         } catch (final JsonProcessingException e) {
             throw new YtiMessagingException(new ErrorModel(HttpStatus.NOT_ACCEPTABLE.value(), "Integration request body generation failed due to error: " + e.getMessage()));
         }
     }
 
-    private String createResourcesRequestBody(final String container,
-                                              final boolean fetchDateRangeChanges) {
+    private String createResourcesRequestBody(final String applicationIdentifier,
+                                              final String container,
+                                              final boolean fetchDateRangeChanges,
+                                              final boolean getLatest) {
         final ObjectMapper mapper = new CustomObjectMapper();
-        final IntegrationResourceRequestDTO integrationResourceRequestDto = new IntegrationResourceRequestDTO();
-        integrationResourceRequestDto.setIncludeIncomplete(true);
+        final IntegrationResourceRequestDTO integrationResourceRequest = new IntegrationResourceRequestDTO();
+        integrationResourceRequest.setIncludeIncomplete(true);
         if (fetchDateRangeChanges) {
-            setAfterAndBefore(integrationResourceRequestDto);
+            setAfterAndBefore(integrationResourceRequest, getLatest);
         }
         if (container != null && !container.isEmpty()) {
             final List<String> containerUris = new ArrayList<>();
             containerUris.add(container);
-            integrationResourceRequestDto.setContainer(containerUris);
+            integrationResourceRequest.setContainer(containerUris);
         }
-        integrationResourceRequestDto.setPageFrom(0);
-        integrationResourceRequestDto.setPageSize(10);
+        if (applicationIdentifier.equalsIgnoreCase(APPLICATION_CODELIST)) {
+            integrationResourceRequest.setType(TYPE_CODE);
+        }
+        integrationResourceRequest.setLanguage(LANGUAGE_CODE_FI);
+        integrationResourceRequest.setPageFrom(0);
+        integrationResourceRequest.setPageSize(RESOURCES_PAGE_SIZE);
         try {
-            return mapper.writeValueAsString(integrationResourceRequestDto);
+            return mapper.writeValueAsString(integrationResourceRequest);
         } catch (final JsonProcessingException e) {
             throw new YtiMessagingException(new ErrorModel(HttpStatus.NOT_ACCEPTABLE.value(), "Integration request body generation failed due to error: " + e.getMessage()));
         }
     }
 
-    private void setAfterAndBefore(final IntegrationResourceRequestDTO integrationResourceRequestDto) {
-        // TODO: Fetch changes between between 07-07, and harmonize Scheduling to be in line with this
+    private void setAfterAndBefore(final IntegrationResourceRequestDTO integrationResourceRequestDto,
+                                   final boolean getLatest) {
         final TimeZone tz = TimeZone.getTimeZone("Europe/Helsinki");
         final DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         df.setTimeZone(tz);
-        final String after = df.format(yesterday());
-        final String before = df.format(tomorrow());
+        final String after = df.format(yesterday()) + DATE_SUFFIX;
         integrationResourceRequestDto.setAfter(after);
-        integrationResourceRequestDto.setBefore(before);
+        if (!getLatest) {
+            final String before = df.format(now()) + DATE_SUFFIX;
+            integrationResourceRequestDto.setBefore(before);
+        }
     }
 
     private String resolveRequestUrl(final String applicationIdentifier,

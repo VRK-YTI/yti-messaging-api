@@ -51,7 +51,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             if (emailAddress != null && !emailAddress.endsWith("localhost")) {
                 LOG.info("Sending email to: " + userId);
-                LOG.info("Email message: " + message);
+                LOG.debug("Email message: " + message);
                 final MimeMessage mail = javaMailSender.createMimeMessage();
                 mail.setRecipient(TO, createAddress(emailAddress));
                 mail.setFrom(createAddress(adminEmail));

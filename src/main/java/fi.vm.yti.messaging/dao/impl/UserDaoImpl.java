@@ -16,7 +16,7 @@ import fi.vm.yti.messaging.service.impl.SubscriptionType;
 @Component
 public class UserDaoImpl implements UserDao {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     @Inject
     public UserDaoImpl(final UserRepository userRepository) {
