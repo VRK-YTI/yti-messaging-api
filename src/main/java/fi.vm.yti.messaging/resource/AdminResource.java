@@ -19,7 +19,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Component
@@ -42,10 +41,8 @@ public class AdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Send e-mail notifications to everyone.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Notifications sent successfully."),
-        @ApiResponse(responseCode = "401", description = "Authentication failed.")
-    })
+    @ApiResponse(responseCode = "200", description = "Notifications sent successfully.")
+    @ApiResponse(responseCode = "401", description = "Authentication failed.")
     public Response sendNotifications() {
         if (authorizationManager.isSuperUser()) {
             notificationService.sendAllNotifications();
@@ -59,12 +56,10 @@ public class AdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Send e-mail notifications to user.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Notifications sent successfully."),
-        @ApiResponse(responseCode = "304", description = "No updates for content."),
-        @ApiResponse(responseCode = "401", description = "Authentication failed."),
-        @ApiResponse(responseCode = "404", description = "User not found.")
-    })
+    @ApiResponse(responseCode = "200", description = "Notifications sent successfully.")
+    @ApiResponse(responseCode = "304", description = "No updates for content.")
+    @ApiResponse(responseCode = "401", description = "Authentication failed.")
+    @ApiResponse(responseCode = "404", description = "User not found.")
     public Response sendNotificationsToUser(@Parameter(description = "User ID to be notified.", required = true, in = ParameterIn.PATH) @PathParam("userId") final UUID userId) {
         if (authorizationManager.isSuperUser()) {
             notificationService.sendUserNotifications(userId);
