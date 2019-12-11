@@ -323,7 +323,10 @@ public class NotificationServiceImpl implements NotificationService {
         }
         builder.append("</a>");
         final Date modifiedComparisonDate = createAfterDateForModifiedComparison();
-        builder.append(": " + localizeStatus(resource.getStatus()));
+        final String status = resource.getStatus();
+        if (status != null) {
+            builder.append(": " + localizeStatus(status));
+        }
         final String type = resource.getType();
         if (isContainerType(type)) {
             builder.append("<ul>");
