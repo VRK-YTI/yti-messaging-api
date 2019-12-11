@@ -30,7 +30,6 @@ import fi.vm.yti.messaging.service.SubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Component
@@ -58,11 +57,9 @@ public class SubscriptionResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     @Operation(summary = "Gets, adds or deletes the user subscription to a given URI resource.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Returns the resource either found or created."),
-        @ApiResponse(responseCode = "401", description = "Authentication failed."),
-        @ApiResponse(responseCode = "404", description = "No subscription for given resource.")
-    })
+    @ApiResponse(responseCode = "200", description = "Returns the resource either found or created.")
+    @ApiResponse(responseCode = "401", description = "Authentication failed.")
+    @ApiResponse(responseCode = "404", description = "No subscription for given resource.")
     public Response postSubscription(@Parameter(description = "Subscription request as JSON payload.") @RequestBody final String subscriptionRequest) {
         final SubscriptionRequestDTO subscriptionRequestDto = parseSubscriptionRequestDto(subscriptionRequest);
         final String uri = subscriptionRequestDto.getUri();

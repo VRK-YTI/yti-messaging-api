@@ -32,7 +32,6 @@ import fi.vm.yti.messaging.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Component
@@ -58,11 +57,9 @@ public class UserResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     @Operation(summary = "Get user subscription information for the logged in user.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "User information for the logged in user with subscriptions."),
-        @ApiResponse(responseCode = "401", description = "Authentication failed."),
-        @ApiResponse(responseCode = "404", description = "User not found, no subscriptions yet.")
-    })
+    @ApiResponse(responseCode = "200", description = "User information for the logged in user with subscriptions.")
+    @ApiResponse(responseCode = "401", description = "Authentication failed.")
+    @ApiResponse(responseCode = "404", description = "User not found, no subscriptions yet.")
     public Response getUserInformation() {
         if (authorizationManager.canGetUserInformation()) {
             final UserDTO user = userService.findById(authorizationManager.getUserId());
@@ -83,11 +80,9 @@ public class UserResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     @Operation(summary = "Sets the user subscription type.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "User information for the logged in user with subscriptions."),
-        @ApiResponse(responseCode = "401", description = "Authentication failed."),
-        @ApiResponse(responseCode = "404", description = "User not found.")
-    })
+    @ApiResponse(responseCode = "200", description = "User information for the logged in user with subscriptions.")
+    @ApiResponse(responseCode = "401", description = "Authentication failed.")
+    @ApiResponse(responseCode = "404", description = "User not found.")
     public Response setSubscriptionType(@Parameter(description = "Subscription type request as JSON payload.") @RequestBody final String subscriptionTypeRequest) {
         final SubscriptionTypeRequestDTO subscriptionTypeRequestDto = parseSubscriptionTypeRequestDto(subscriptionTypeRequest);
         final String subscriptionType = subscriptionTypeRequestDto.getSubscriptionType();
