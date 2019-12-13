@@ -26,11 +26,11 @@ public class ResourceDaoImpl implements ResourceDao {
 
     public Resource getOrCreateResource(final String uri,
                                         final String type) {
+        containerNameService.addPrefLabelToUriWithType(uri, type);
         final Resource existingResource = resourceRepository.findByUri(uri);
         if (existingResource != null) {
             return existingResource;
         } else {
-            containerNameService.addPrefLabelToUriWithType(uri, type);
             final Resource resource = createResource(uri, type);
             resourceRepository.save(resource);
             return resource;
