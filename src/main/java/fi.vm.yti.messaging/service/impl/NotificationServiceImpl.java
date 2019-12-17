@@ -402,7 +402,7 @@ public class NotificationServiceImpl implements NotificationService {
     private String encodeAndEmbedEnvironmentToUri(final String uri) {
         final String env = messagingServiceProperties.getEnv();
         final String encodedUri = encodeUri(uri);
-        if ("awsprod".equalsIgnoreCase(env)) {
+        if ("prod".equalsIgnoreCase(env)) {
             return encodedUri;
         } else {
             return encodedUri + "?env=" + env;
