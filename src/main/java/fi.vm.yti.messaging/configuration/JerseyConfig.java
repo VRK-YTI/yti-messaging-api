@@ -4,7 +4,10 @@ import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Priorities;
 
 import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import org.glassfish.jersey.message.DeflateEncoder;
+import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.filter.EncodingFilter;
 import org.springframework.stereotype.Component;
 
 import fi.vm.yti.messaging.exception.exceptionmapping.YtiMessagingExceptionMapper;
@@ -60,6 +63,11 @@ public class JerseyConfig extends ResourceConfig {
 
         // Cache control headers to no cache.
         register(CacheFilter.class, Priorities.AUTHENTICATION);
+
+        // Gzip
+        register(EncodingFilter.class);
+        register(GZipEncoder.class);
+        register(DeflateEncoder.class);
 
         // OpenAPI
         register(OpenApiResource.class);
