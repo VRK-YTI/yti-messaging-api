@@ -212,17 +212,22 @@ public class NotificationServiceImpl implements NotificationService {
             if (subResourceResponse != null) {
                 final List<IntegrationResourceDTO> subResources = subResourceResponse.getResults();
                 if (subResources != null && !subResources.isEmpty()) {
+                    final Set<IntegrationResourceDTO> subResourcesNew = new LinkedHashSet<>();
                     final Set<IntegrationResourceDTO> subResourcesWithStatusChanges = new LinkedHashSet<>();
                     final Set<IntegrationResourceDTO> subResourcesWithContentChanges = new LinkedHashSet<>();
                     subResources.forEach(subResource -> {
+                        final boolean isNew = isResourceNew(subResource);
                         final Date statusModified = subResource.getStatusModified();
                         final Date statusModifiedComparisonDate = createAfterDateForModifiedComparison();
-                        if (statusModified != null && (statusModified.after(statusModifiedComparisonDate) || statusModified.equals(statusModifiedComparisonDate))) {
+                        if (isNew) {
+                            subResourcesNew.add(subResource);
+                        } else if (statusModified != null && (statusModified.after(statusModifiedComparisonDate) || statusModified.equals(statusModifiedComparisonDate))) {
                             subResourcesWithStatusChanges.add(subResource);
                         } else {
                             subResourcesWithContentChanges.add(subResource);
                         }
                     });
+                    addSubResourcesThatAreNew(applicationIdentifier, builder, subResourcesNew);
                     addSubResourcesWithStatusChanges(applicationIdentifier, builder, subResourcesWithStatusChanges);
                     addSubResourcesWithContentChanges(applicationIdentifier, builder, subResourcesWithContentChanges);
                     final Meta meta = subResourceResponse.getMeta();
@@ -233,6 +238,18 @@ public class NotificationServiceImpl implements NotificationService {
             }
             builder.append("</ul>");
         });
+    }
+
+    private boolean isResourceNew(final IntegrationResourceDTO resource) {
+        final Date created = resource.getCreated();
+        final Date modified = resource.getModified();
+        final boolean isNew;
+        if (created != null && modified != null) {
+            isNew = created.equals(modified);
+        } else {
+            isNew = false;
+        }
+        return isNew;
     }
 
     private void appendTotalSubResources(final StringBuilder builder,
@@ -276,6 +293,17 @@ public class NotificationServiceImpl implements NotificationService {
                 return "kommentointiketjun";
             default:
                 return "aineiston";
+        }
+    }
+
+    private void addSubResourcesThatAreNew(final String applicationIdentifier,
+                                           final StringBuilder builder,
+                                           final Set<IntegrationResourceDTO> resources) {
+        if (resources != null && !resources.isEmpty()) {
+            builder.append("<li>uudet resurssit</li>");
+            builder.append("<ul>");
+            resources.forEach(resource -> addResourceToBuilder(true, applicationIdentifier, builder, resource));
+            builder.append("</ul>");
         }
     }
 
