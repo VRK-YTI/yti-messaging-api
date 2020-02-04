@@ -1,18 +1,21 @@
 package fi.vm.yti.messaging.api;
 
-public class ApiConstants {
+public interface ApiConstants {
 
-    public static final String PATH_CODELIST_API = "/codelist-api";
-    public static final String PATH_DATAMODEL_API = "/datamodel-api";
-    public static final String PATH_TERMINOLOGY_API = "/terminology-api";
-    public static final String PATH_COMMENTS_API = "/comments-api";
-    public static final String PATH_API_WITH_VERSION = "/api/v1";
-    public static final String PATH_CONTAINERS_API = "/integration/containers";
-    public static final String PATH_RESOURCES_API = "/integration/resources";
-    public static final String APPLICATION_CODELIST = "codelist";
-    public static final String APPLICATION_DATAMODEL = "datamodel";
-    public static final String APPLICATION_TERMINOLOGY = "terminology";
-    public static final String APPLICATION_COMMENTS = "comments";
+    String PATH_CODELIST_API = "/codelist-api";
+    String PATH_DATAMODEL_API = "/datamodel-api";
+    String PATH_TERMINOLOGY_API = "/terminology-api";
+    String PATH_COMMENTS_API = "/comments-api";
+    String PATH_API = "/api";
+    String PATH_V1 = "/v1";
+    String PATH_INTEGRATION = "/integration";
+    String PATH_CONTAINERS_API = "/containers";
+    String PATH_RESOURCES_API = "/resources";
 
-    public static final int RESOURCES_PAGE_SIZE = 10;
+    String APPLICATION_CODELIST = "codelist";
+    String APPLICATION_DATAMODEL = "datamodel";
+    String APPLICATION_TERMINOLOGY = "terminology";
+    String APPLICATION_COMMENTS = "comments";
+
+    int RESOURCES_PAGE_SIZE = 10;
 }
