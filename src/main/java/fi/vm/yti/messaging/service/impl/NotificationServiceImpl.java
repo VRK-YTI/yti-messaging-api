@@ -34,6 +34,7 @@ import fi.vm.yti.messaging.service.ResourceService;
 import fi.vm.yti.messaging.service.UserService;
 import static fi.vm.yti.messaging.api.ApiConstants.*;
 import static fi.vm.yti.messaging.util.ApplicationUtils.*;
+import static fi.vm.yti.messaging.util.ApplicationUtils.createAfterDateForModifiedComparison;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
@@ -182,19 +183,19 @@ public class NotificationServiceImpl implements NotificationService {
         final List<IntegrationResourceDTO> commentsUpdates = userNotificationDto.getCommentsResources();
         if (!terminologyUpdates.isEmpty()) {
             builder.append("<h3>Sanastot</h3>");
-            addResourceUpdates(APPLICATION_TERMINOLOGY, builder, terminologyUpdates);
+            addContainerUpdates(APPLICATION_TERMINOLOGY, builder, terminologyUpdates);
         }
         if (!codelistUpdates.isEmpty()) {
             builder.append("<h3>Koodistot</h3>");
-            addResourceUpdates(APPLICATION_CODELIST, builder, codelistUpdates);
+            addContainerUpdates(APPLICATION_CODELIST, builder, codelistUpdates);
         }
         if (!datamodelUpdates.isEmpty()) {
             builder.append("<h3>Tietomallit</h3>");
-            addResourceUpdates(APPLICATION_DATAMODEL, builder, datamodelUpdates);
+            addContainerUpdates(APPLICATION_DATAMODEL, builder, datamodelUpdates);
         }
         if (!commentsUpdates.isEmpty()) {
             builder.append("<h3>Kommentit</h3>");
-            addResourceUpdates(APPLICATION_COMMENTS, builder, commentsUpdates);
+            addContainerUpdates(APPLICATION_COMMENTS, builder, commentsUpdates);
         }
         builder.append("<br/>");
         builder.append("<br/>");
@@ -203,40 +204,42 @@ public class NotificationServiceImpl implements NotificationService {
         return builder.toString();
     }
 
-    private void addResourceUpdates(final String applicationIdentifier,
-                                    final StringBuilder builder,
-                                    final List<IntegrationResourceDTO> resources) {
+    private void addContainerUpdates(final String applicationIdentifier,
+                                     final StringBuilder builder,
+                                     final List<IntegrationResourceDTO> resources) {
         resources.forEach(resource -> {
-            addResourceToBuilder(false, applicationIdentifier, builder, resource);
             final IntegrationResponseDTO subResourceResponse = resource.getSubResourceResponse();
-            if (subResourceResponse != null) {
-                final List<IntegrationResourceDTO> subResources = subResourceResponse.getResults();
-                if (subResources != null && !subResources.isEmpty()) {
-                    final Set<IntegrationResourceDTO> subResourcesNew = new LinkedHashSet<>();
-                    final Set<IntegrationResourceDTO> subResourcesWithStatusChanges = new LinkedHashSet<>();
-                    final Set<IntegrationResourceDTO> subResourcesWithContentChanges = new LinkedHashSet<>();
-                    subResources.forEach(subResource -> {
-                        final boolean isNew = isResourceNew(subResource);
-                        final Date statusModified = subResource.getStatusModified();
-                        final Date statusModifiedComparisonDate = createAfterDateForModifiedComparison();
-                        if (isNew) {
-                            subResourcesNew.add(subResource);
-                        } else if (statusModified != null && (statusModified.after(statusModifiedComparisonDate) || statusModified.equals(statusModifiedComparisonDate))) {
-                            subResourcesWithStatusChanges.add(subResource);
-                        } else {
-                            subResourcesWithContentChanges.add(subResource);
+            if (resource.getModified().after(createAfterDateForModifiedComparison()) || subResourceResponse != null) {
+                addResourceToBuilder(false, applicationIdentifier, builder, resource);
+                if (subResourceResponse != null) {
+                    final List<IntegrationResourceDTO> subResources = subResourceResponse.getResults();
+                    if (subResources != null && !subResources.isEmpty()) {
+                        final Set<IntegrationResourceDTO> subResourcesNew = new LinkedHashSet<>();
+                        final Set<IntegrationResourceDTO> subResourcesWithStatusChanges = new LinkedHashSet<>();
+                        final Set<IntegrationResourceDTO> subResourcesWithContentChanges = new LinkedHashSet<>();
+                        subResources.forEach(subResource -> {
+                            final boolean isNew = isResourceNew(subResource);
+                            final Date statusModified = subResource.getStatusModified();
+                            final Date statusModifiedComparisonDate = createAfterDateForModifiedComparison();
+                            if (isNew) {
+                                subResourcesNew.add(subResource);
+                            } else if (statusModified != null && (statusModified.after(statusModifiedComparisonDate) || statusModified.equals(statusModifiedComparisonDate))) {
+                                subResourcesWithStatusChanges.add(subResource);
+                            } else {
+                                subResourcesWithContentChanges.add(subResource);
+                            }
+                        });
+                        addSubResourcesThatAreNew(applicationIdentifier, builder, subResourcesNew);
+                        addSubResourcesWithStatusChanges(applicationIdentifier, builder, subResourcesWithStatusChanges);
+                        addSubResourcesWithContentChanges(applicationIdentifier, builder, subResourcesWithContentChanges);
+                        final Meta meta = subResourceResponse.getMeta();
+                        if (meta != null && meta.getTotalResults() > RESOURCES_PAGE_SIZE) {
+                            appendTotalSubResources(builder, meta.getTotalResults());
                         }
-                    });
-                    addSubResourcesThatAreNew(applicationIdentifier, builder, subResourcesNew);
-                    addSubResourcesWithStatusChanges(applicationIdentifier, builder, subResourcesWithStatusChanges);
-                    addSubResourcesWithContentChanges(applicationIdentifier, builder, subResourcesWithContentChanges);
-                    final Meta meta = subResourceResponse.getMeta();
-                    if (meta != null && meta.getTotalResults() > RESOURCES_PAGE_SIZE) {
-                        appendTotalSubResources(builder, meta.getTotalResults());
                     }
                 }
+                builder.append("</ul>");
             }
-            builder.append("</ul>");
         });
     }
 
@@ -244,8 +247,8 @@ public class NotificationServiceImpl implements NotificationService {
         final Date created = resource.getCreated();
         final Date modified = resource.getModified();
         final boolean isNew;
-        if (created != null && modified != null) {
-            isNew = created.equals(modified);
+        if (created != null && created.equals(modified) && created.after(createAfterDateForModifiedComparison())) {
+            isNew = true;
         } else {
             isNew = false;
         }
@@ -491,8 +494,9 @@ public class NotificationServiceImpl implements NotificationService {
                                                                                  final Set<String> containerUris,
                                                                                  final boolean getLatest) {
         LOG.info("Fetching containers for: " + applicationIdentifier);
+        final boolean fetchDateRangeChanges = !applicationIdentifier.equalsIgnoreCase(APPLICATION_TERMINOLOGY);
         if (containerUris != null && !containerUris.isEmpty()) {
-            final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris, true, getLatest);
+            final IntegrationResponseDTO integrationResponse = integrationService.getIntegrationContainers(applicationIdentifier, containerUris, fetchDateRangeChanges, getLatest);
             final List<IntegrationResourceDTO> containers = integrationResponse.getResults();
             if (containers != null && !containers.isEmpty()) {
                 LOG.info("Found " + containers.size() + " for application: " + applicationIdentifier);
