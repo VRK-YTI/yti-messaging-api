@@ -245,9 +245,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     private boolean isResourceNew(final IntegrationResourceDTO resource) {
         final Date created = resource.getCreated();
-        final Date modified = resource.getModified();
         final boolean isNew;
-        if (created != null && created.equals(modified) && created.after(createAfterDateForModifiedComparison())) {
+        if (created != null && created.after(createAfterDateForModifiedComparison())) {
             isNew = true;
         } else {
             isNew = false;
