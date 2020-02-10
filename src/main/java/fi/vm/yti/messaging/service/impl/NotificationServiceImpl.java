@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -159,9 +160,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private void sendUserNotifications(final Map<UUID, UserNotificationDTO> userNotifications) {
-        userNotifications.keySet().forEach(userId -> {
-            sendSingleUserNotifications(userId, userNotifications.get(userId));
-        });
+        userNotifications.keySet().forEach(userId -> sendSingleUserNotifications(userId, userNotifications.get(userId)));
     }
 
     private void sendSingleUserNotifications(final UUID userId,
@@ -209,37 +208,35 @@ public class NotificationServiceImpl implements NotificationService {
                                      final List<IntegrationResourceDTO> resources) {
         resources.forEach(resource -> {
             final IntegrationResponseDTO subResourceResponse = resource.getSubResourceResponse();
-            if (resource.getModified().after(createAfterDateForModifiedComparison()) || subResourceResponse != null) {
-                addResourceToBuilder(false, applicationIdentifier, builder, resource);
-                if (subResourceResponse != null) {
-                    final List<IntegrationResourceDTO> subResources = subResourceResponse.getResults();
-                    if (subResources != null && !subResources.isEmpty()) {
-                        final Set<IntegrationResourceDTO> subResourcesNew = new LinkedHashSet<>();
-                        final Set<IntegrationResourceDTO> subResourcesWithStatusChanges = new LinkedHashSet<>();
-                        final Set<IntegrationResourceDTO> subResourcesWithContentChanges = new LinkedHashSet<>();
-                        subResources.forEach(subResource -> {
-                            final boolean isNew = isResourceNew(subResource);
-                            final Date statusModified = subResource.getStatusModified();
-                            final Date statusModifiedComparisonDate = createAfterDateForModifiedComparison();
-                            if (isNew) {
-                                subResourcesNew.add(subResource);
-                            } else if (statusModified != null && (statusModified.after(statusModifiedComparisonDate) || statusModified.equals(statusModifiedComparisonDate))) {
-                                subResourcesWithStatusChanges.add(subResource);
-                            } else {
-                                subResourcesWithContentChanges.add(subResource);
-                            }
-                        });
-                        addSubResourcesThatAreNew(applicationIdentifier, builder, subResourcesNew);
-                        addSubResourcesWithStatusChanges(applicationIdentifier, builder, subResourcesWithStatusChanges);
-                        addSubResourcesWithContentChanges(applicationIdentifier, builder, subResourcesWithContentChanges);
-                        final Meta meta = subResourceResponse.getMeta();
-                        if (meta != null && meta.getTotalResults() > RESOURCES_PAGE_SIZE) {
-                            appendTotalSubResources(builder, meta.getTotalResults());
+            addResourceToBuilder(false, applicationIdentifier, builder, resource);
+            if (subResourceResponse != null) {
+                final List<IntegrationResourceDTO> subResources = subResourceResponse.getResults();
+                if (subResources != null && !subResources.isEmpty()) {
+                    final Set<IntegrationResourceDTO> subResourcesNew = new LinkedHashSet<>();
+                    final Set<IntegrationResourceDTO> subResourcesWithStatusChanges = new LinkedHashSet<>();
+                    final Set<IntegrationResourceDTO> subResourcesWithContentChanges = new LinkedHashSet<>();
+                    subResources.forEach(subResource -> {
+                        final boolean isNew = isResourceNew(subResource);
+                        final Date statusModified = subResource.getStatusModified();
+                        final Date statusModifiedComparisonDate = createAfterDateForModifiedComparison();
+                        if (isNew) {
+                            subResourcesNew.add(subResource);
+                        } else if (statusModified != null && (statusModified.after(statusModifiedComparisonDate) || statusModified.equals(statusModifiedComparisonDate))) {
+                            subResourcesWithStatusChanges.add(subResource);
+                        } else {
+                            subResourcesWithContentChanges.add(subResource);
                         }
+                    });
+                    addSubResourcesThatAreNew(applicationIdentifier, builder, subResourcesNew);
+                    addSubResourcesWithStatusChanges(applicationIdentifier, builder, subResourcesWithStatusChanges);
+                    addSubResourcesWithContentChanges(applicationIdentifier, builder, subResourcesWithContentChanges);
+                    final Meta meta = subResourceResponse.getMeta();
+                    if (meta != null && meta.getTotalResults() > RESOURCES_PAGE_SIZE) {
+                        appendTotalSubResources(builder, meta.getTotalResults());
                     }
                 }
-                builder.append("</ul>");
             }
+            builder.append("</ul>");
         });
     }
 
@@ -499,6 +496,8 @@ public class NotificationServiceImpl implements NotificationService {
             final List<IntegrationResourceDTO> containers = integrationResponse.getResults();
             if (containers != null && !containers.isEmpty()) {
                 LOG.info("Found " + containers.size() + " for application: " + applicationIdentifier);
+                // TODO: Remove container filtering once Terminology adds support for contentModified timestamping
+                final Set<IntegrationResourceDTO> containersToFilter = new HashSet<>();
                 containers.forEach(container -> {
                     final Date contentModified = container.getContentModified();
                     final Date contentModifiedComparisonDate = createAfterDateForModifiedComparison();
@@ -507,9 +506,14 @@ public class NotificationServiceImpl implements NotificationService {
                         LOG.info("Container: " + container.getUri() + " has content that has been modified lately, fetching resources.");
                         integrationResponseForResources = integrationService.getIntegrationResources(applicationIdentifier, container.getUri(), true, getLatest);
                         LOG.info("Resources for " + applicationIdentifier + " have " + integrationResponseForResources.getResults().size() + " updates.");
-                        container.setSubResourceResponse(integrationResponseForResources);
+                        if (integrationResponseForResources.getResults() != null && !integrationResponseForResources.getResults().isEmpty()) {
+                            container.setSubResourceResponse(integrationResponseForResources);
+                        } else if (!container.getModified().after(createAfterDateForModifiedComparison())) {
+                            containersToFilter.add(container);
+                        }
                     }
                 });
+                containers.removeAll(containersToFilter);
                 return containers;
             } else {
                 LOG.info("No containers have updates for " + applicationIdentifier);
