@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.vm.yti.messaging.dto.ErrorModel;
 import fi.vm.yti.messaging.dto.ResourceDTO;
 import fi.vm.yti.messaging.dto.SubscriptionRequestDTO;
-import fi.vm.yti.messaging.exception.NotFoundException;
+import fi.vm.yti.messaging.exception.NoContentException;
 import fi.vm.yti.messaging.exception.UnauthorizedException;
 import fi.vm.yti.messaging.exception.YtiMessagingException;
 import fi.vm.yti.messaging.security.AuthorizationManager;
@@ -58,8 +58,8 @@ public class SubscriptionResource {
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     @Operation(summary = "Gets, adds or deletes the user subscription to a given URI resource.")
     @ApiResponse(responseCode = "200", description = "Returns the resource either found or created.")
+    @ApiResponse(responseCode = "204", description = "No subscription for given resource.")
     @ApiResponse(responseCode = "401", description = "Authentication failed.")
-    @ApiResponse(responseCode = "404", description = "No subscription for given resource.")
     public Response postSubscription(@Parameter(description = "Subscription request as JSON payload.") @RequestBody final String subscriptionRequest) {
         final SubscriptionRequestDTO subscriptionRequestDto = parseSubscriptionRequestDto(subscriptionRequest);
         final String uri = subscriptionRequestDto.getUri();
@@ -99,9 +99,9 @@ public class SubscriptionResource {
         if (resource != null) {
             return Response.ok(resource).build();
         } else {
-            // TODO: Return 404, not 500 not found!
-            LOG.debug("Resource not found for user: " + userId + " , returning 404 for uri: " + uri);
-            throw new NotFoundException();
+            // TODO: Return 204, not 500 not found!
+            LOG.debug("Resource not found for user: " + userId + " , returning 204 for uri: " + uri);
+            throw new NoContentException();
         }
     }
 

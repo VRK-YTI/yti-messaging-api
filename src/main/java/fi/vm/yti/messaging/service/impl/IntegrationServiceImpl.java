@@ -76,7 +76,7 @@ public class IntegrationServiceImpl implements IntegrationService {
                                                            final Set<String> containerUris,
                                                            final boolean fetchDateRangeChanges,
                                                            final boolean getLatest) {
-        final String requestUrl = resolveContainersRequestUrl(applicationIdentifier);
+        final String requestUrl = resolveIntegrationContainersRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration containers from: " + requestUrl);
         final String requestBody = createContainerRequestBody(containerUris, fetchDateRangeChanges, getLatest);
         LOG.info("Fetching integration containers body: " + requestBody);
@@ -98,7 +98,7 @@ public class IntegrationServiceImpl implements IntegrationService {
                                                           final String containerUri,
                                                           final boolean fetchDateRangeChanges,
                                                           final boolean getLatest) {
-        final String requestUrl = resolveResourcesRequestUrl(applicationIdentifier);
+        final String requestUrl = resolveIntegrationResourcesRequestUrl(applicationIdentifier);
         LOG.debug("Fetching integration resources from: " + requestUrl);
         final String requestBody = createResourcesRequestBody(applicationIdentifier, containerUri, fetchDateRangeChanges, getLatest);
         LOG.debug("Fetching integration resources body: " + requestBody);
@@ -204,27 +204,33 @@ public class IntegrationServiceImpl implements IntegrationService {
         }
     }
 
-    private String resolveRequestUrl(final String applicationIdentifier,
-                                     final String endPoint) {
+    private String resolveIntegrationRequestUrl(final String applicationIdentifier,
+                                                final String endPoint) {
         switch (applicationIdentifier) {
             case APPLICATION_CODELIST:
-                return codelistProperties.getPublicUrl() + PATH_CODELIST_API + PATH_API_WITH_VERSION + endPoint;
+                return resolveIntegrationRequestUrl(codelistProperties.getPublicUrl(), PATH_CODELIST_API, endPoint);
             case APPLICATION_DATAMODEL:
-                return dataModelProperties.getPublicUrl() + PATH_DATAMODEL_API + PATH_API_WITH_VERSION + endPoint;
+                return resolveIntegrationRequestUrl(dataModelProperties.getPublicUrl(), PATH_DATAMODEL_API, endPoint);
             case APPLICATION_TERMINOLOGY:
-                return terminologyProperties.getPublicUrl() + PATH_TERMINOLOGY_API + PATH_API_WITH_VERSION + endPoint;
+                return resolveIntegrationRequestUrl(terminologyProperties.getPublicUrl(), PATH_TERMINOLOGY_API, endPoint);
             case APPLICATION_COMMENTS:
-                return commentsProperties.getPublicUrl() + PATH_COMMENTS_API + PATH_API_WITH_VERSION + endPoint;
+                return resolveIntegrationRequestUrl(commentsProperties.getPublicUrl(), PATH_COMMENTS_API, endPoint);
             default:
                 throw new YtiMessagingException(new ErrorModel(HttpStatus.NOT_ACCEPTABLE.value(), "Unknown applicationIdentifier: " + applicationIdentifier));
         }
     }
 
-    private String resolveContainersRequestUrl(final String applicationIdentifier) {
-        return resolveRequestUrl(applicationIdentifier, PATH_CONTAINERS_API);
+    private String resolveIntegrationRequestUrl(final String publicUrl,
+                                                final String applicationApiPath,
+                                                final String endPoint) {
+        return publicUrl + applicationApiPath + PATH_API + PATH_V1 + PATH_INTEGRATION + endPoint;
     }
 
-    private String resolveResourcesRequestUrl(final String applicationIdentifier) {
-        return resolveRequestUrl(applicationIdentifier, PATH_RESOURCES_API);
+    private String resolveIntegrationContainersRequestUrl(final String applicationIdentifier) {
+        return resolveIntegrationRequestUrl(applicationIdentifier, PATH_CONTAINERS_API);
+    }
+
+    private String resolveIntegrationResourcesRequestUrl(final String applicationIdentifier) {
+        return resolveIntegrationRequestUrl(applicationIdentifier, PATH_RESOURCES_API);
     }
 }

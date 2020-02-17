@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @XmlRootElement
-@XmlType(propOrder = { "uri", "type", "prefLabel", "description", "localName", "status", "modified", "statusModified", "contentModified", "type", "subResourceResponse" })
+@XmlType(propOrder = { "uri", "type", "prefLabel", "description", "localName", "status", "created", "modified", "statusModified", "contentModified", "type", "subResourceResponse" })
 @Schema(name = "Integration resource", description = "Integration resource DTO that represents data for one single Container or Resource for integration use.")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IntegrationResourceDTO implements Serializable, Comparable<IntegrationResourceDTO> {
@@ -26,6 +26,7 @@ public class IntegrationResourceDTO implements Serializable, Comparable<Integrat
     private String localName;
     private String uri;
     private String status;
+    private Date created;
     private Date modified;
     private Date statusModified;
     private Date contentModified;
@@ -92,6 +93,23 @@ public class IntegrationResourceDTO implements Serializable, Comparable<Integrat
 
     public void setStatus(final String status) {
         this.status = status;
+    }
+
+    @Schema(format = "dateTime")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    public Date getCreated() {
+        if (created != null) {
+            return new Date(created.getTime());
+        }
+        return null;
+    }
+
+    public void setCreated(final Date created) {
+        if (created != null) {
+            this.created = new Date(created.getTime());
+        } else {
+            this.created = null;
+        }
     }
 
     @Schema(format = "dateTime")
