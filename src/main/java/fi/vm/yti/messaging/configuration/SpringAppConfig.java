@@ -5,6 +5,7 @@ import java.nio.charset.Charset;
 import javax.sql.DataSource;
 
 import org.apache.catalina.connector.Connector;
+import org.apache.coyote.ajp.AjpNioProtocol;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
@@ -50,6 +51,10 @@ public class SpringAppConfig {
             ajpConnector.setSecure(false);
             ajpConnector.setAllowTrace(false);
             ajpConnector.setScheme("http");
+
+            AjpNioProtocol protocol= (AjpNioProtocol) ajpConnector.getProtocolHandler();
+            protocol.setSecretRequired(false);
+
             tomcat.addAdditionalTomcatConnectors(ajpConnector);
         }
         return tomcat;
