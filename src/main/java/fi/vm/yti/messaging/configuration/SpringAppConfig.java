@@ -1,5 +1,7 @@
 package fi.vm.yti.messaging.configuration;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 
 import javax.sql.DataSource;
@@ -41,7 +43,7 @@ public class SpringAppConfig {
     }
 
     @Bean
-    public TomcatServletWebServerFactory servletContainer(@Value("${tomcat.ajp.port:}") Integer ajpPort) {
+    public TomcatServletWebServerFactory servletContainer(@Value("${tomcat.ajp.port:}") Integer ajpPort) throws UnknownHostException {
         final TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
         tomcat.setContextPath(contextPath);
         tomcat.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/notfound.html"));
@@ -51,9 +53,11 @@ public class SpringAppConfig {
             ajpConnector.setSecure(false);
             ajpConnector.setAllowTrace(false);
             ajpConnector.setScheme("http");
+            ajpConnector.setProperty("allowedRequestAttributesPattern", ".*");
 
             AjpNioProtocol protocol= (AjpNioProtocol) ajpConnector.getProtocolHandler();
             protocol.setSecretRequired(false);
+            protocol.setAddress(InetAddress.getByName("0.0.0.0"));
 
             tomcat.addAdditionalTomcatConnectors(ajpConnector);
         }
