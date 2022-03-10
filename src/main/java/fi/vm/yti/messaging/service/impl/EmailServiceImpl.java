@@ -62,8 +62,8 @@ public class EmailServiceImpl implements EmailService {
             } else {
                 LOG.info("Not sending e-mail to a localhost user: " + emailAddress);
             }
-        } catch (final MessagingException e) {
-            LOG.error("Email sending failed due to " + e.getMessage());
+        } catch (final Exception e) {
+            LOG.error("Email sending failed due to " + e.getMessage(), e);
         }
     }
 }
