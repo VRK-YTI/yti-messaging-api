@@ -60,7 +60,7 @@ public class EmailServiceImpl implements EmailService {
                 mail.setContent(message, "text/html; charset=UTF-8");
                 javaMailSender.send(mail);
             } else {
-                LOG.info("Not sending e-mail to a localhost user: " + emailAddress);
+                LOG.info("Not sending e-mail to a localhost or removed user : " + emailAddress);
             }
         } catch (final Exception e) {
             LOG.error("Email sending failed due to " + e.getMessage(), e);
