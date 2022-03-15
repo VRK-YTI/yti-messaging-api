@@ -61,6 +61,7 @@ public class UserLookupServiceImpl implements UserLookupService {
     }
 
     public String getUserEmailById(final UUID id) {
-        return users.get(id).getEmail();
+        GroupManagementUserDTO user = users.get(id);
+        return user != null ? user.getEmail() : null;
     }
 }
