@@ -1,7 +1,9 @@
 package fi.vm.yti.messaging.service.impl;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,19 @@ public class DtoMapperServiceImpl implements DtoMapperService {
             resources.forEach(resource -> resourceDtos.add(mapResource(resource)));
         }
         return resourceDtos;
+    }
+
+    public ResourceDTO mapResource(final List<Resource> resource) {
+        if (resource != null && !resource.isEmpty()) {
+            final ResourceDTO resourceDto = new ResourceDTO();
+            String uris = resource.stream().map(r -> r.getUri()).collect(Collectors.joining(","));
+            resourceDto.setUri(uris);
+            // Application and type are same
+            resourceDto.setApplication(resource.get(0).getApplication());
+            resourceDto.setType(resource.get(0).getType());
+            return resourceDto;
+        }
+        return null;
     }
 
     public ResourceDTO mapResource(final Resource resource) {

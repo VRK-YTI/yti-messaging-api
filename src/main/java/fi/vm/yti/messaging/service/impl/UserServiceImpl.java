@@ -1,8 +1,6 @@
 package fi.vm.yti.messaging.service.impl;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import javax.inject.Inject;
 
@@ -94,13 +92,17 @@ public class UserServiceImpl implements UserService {
         final User user = userDao.findById(userId);
         if (user != null && uri != null) {
             final Set<Resource> resources = user.getResources();
-            Resource resourceToBeDeleted = null;
-            for (final Resource resource : resources) {
-                if (resource.getUri().equalsIgnoreCase(uri)) {
-                    resourceToBeDeleted = resource;
+            List<Resource> resourceToBeDeleted = new ArrayList<>();
+            List<String> uris = Arrays.asList(uri.split(","));
+
+            for(String u : uris) {
+                for (final Resource resource : resources) {
+                    if (resource.getUri().equalsIgnoreCase(u)) {
+                        resourceToBeDeleted.add(resource);
+                    }
                 }
             }
-            resources.remove(resourceToBeDeleted);
+            resources.removeAll(resourceToBeDeleted);
             user.setResources(resources);
             userDao.save(user);
             return dtoMapperService.mapResource(resourceToBeDeleted);
