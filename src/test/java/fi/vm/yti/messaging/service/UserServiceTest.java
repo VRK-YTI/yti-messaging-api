@@ -7,14 +7,10 @@ import fi.vm.yti.messaging.dao.impl.UserDaoImpl;
 import fi.vm.yti.messaging.dto.ResourceDTO;
 import fi.vm.yti.messaging.entity.Resource;
 import fi.vm.yti.messaging.entity.User;
-import fi.vm.yti.messaging.jpa.ResourceRepository;
 import fi.vm.yti.messaging.service.impl.DtoMapperServiceImpl;
 import fi.vm.yti.messaging.service.impl.UserServiceImpl;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -25,6 +21,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @Import({
@@ -52,7 +49,7 @@ public class UserServiceTest {
 
         ResourceDTO resourceDTO = userService.deleteResourceFromUser("http://uri1", uuid);
 
-        Assertions.assertEquals("http://uri1", resourceDTO.getUri());
+        assertEquals("http://uri1", resourceDTO.getUri());
     }
 
     @Test
@@ -64,7 +61,7 @@ public class UserServiceTest {
 
         ResourceDTO resourceDTO = userService.deleteResourceFromUser("http://uri1,http://uri2", uuid);
 
-        Assertions.assertEquals("http://uri1,http://uri2", resourceDTO.getUri());
+        assertEquals("http://uri1,http://uri2", resourceDTO.getUri());
     }
 
     private User getUser(UUID uuid) {
