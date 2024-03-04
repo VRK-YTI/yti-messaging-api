@@ -35,7 +35,6 @@ import fi.vm.yti.messaging.service.ResourceService;
 import fi.vm.yti.messaging.service.UserService;
 import static fi.vm.yti.messaging.api.ApiConstants.*;
 import static fi.vm.yti.messaging.util.ApplicationUtils.*;
-import static fi.vm.yti.messaging.util.ApplicationUtils.createAfterDateForModifiedComparison;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
@@ -443,7 +442,9 @@ public class NotificationServiceImpl implements NotificationService {
     private List<IntegrationResourceDTO> getUpdatedContainersForAllApplications(final UUID userId) {
         final List<IntegrationResourceDTO> updatedResources = new ArrayList<>();
         addUpdatedContainersForApplication(APPLICATION_CODELIST, updatedResources, userId);
-        addUpdatedContainersForApplication(APPLICATION_DATAMODEL, updatedResources, userId);
+        if (!"awsdev".equals(messagingServiceProperties.getEnv())) {
+            addUpdatedContainersForApplication(APPLICATION_DATAMODEL, updatedResources, userId);
+        }
         addUpdatedContainersForApplication(APPLICATION_TERMINOLOGY, updatedResources, userId);
         addUpdatedContainersForApplication(APPLICATION_COMMENTS, updatedResources, userId);
         return updatedResources;
