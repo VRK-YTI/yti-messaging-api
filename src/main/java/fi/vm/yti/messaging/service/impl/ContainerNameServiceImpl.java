@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import fi.vm.yti.messaging.configuration.MessagingServiceProperties;
 import fi.vm.yti.messaging.dto.IntegrationResourceDTO;
 import fi.vm.yti.messaging.dto.IntegrationResponseDTO;
 import fi.vm.yti.messaging.dto.ResourceDTO;
@@ -30,19 +31,24 @@ public class ContainerNameServiceImpl implements ContainerNameService {
     private final Map<String, Map<String, String>> containerPrefLabels;
     private final IntegrationService integrationService;
     private final ResourceService resourceService;
+    private final MessagingServiceProperties messagingServiceProperties;
 
     @Inject
     public ContainerNameServiceImpl(final IntegrationService integrationService,
-                                    final ResourceService resourceService) {
+                                    final ResourceService resourceService,
+                                    final MessagingServiceProperties messagingServiceProperties) {
         containerPrefLabels = new HashMap<>();
         this.resourceService = resourceService;
         this.integrationService = integrationService;
+        this.messagingServiceProperties = messagingServiceProperties;
     }
 
     @Scheduled(cron = "0 0 0 * * *", zone = "Europe/Helsinki")
     public void refreshPrefLabels() {
         fetchAndCachePrefLabelsForContainers(APPLICATION_CODELIST);
-        fetchAndCachePrefLabelsForContainers(APPLICATION_DATAMODEL);
+        if (!"awsdev".equals(messagingServiceProperties.getEnv())) {
+            fetchAndCachePrefLabelsForContainers(APPLICATION_DATAMODEL);
+        }
         fetchAndCachePrefLabelsForContainers(APPLICATION_TERMINOLOGY);
         fetchAndCachePrefLabelsForContainers(APPLICATION_COMMENTS);
     }
