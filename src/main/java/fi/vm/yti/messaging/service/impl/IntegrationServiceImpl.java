@@ -199,7 +199,7 @@ public class IntegrationServiceImpl implements IntegrationService {
         final String after = df.format(yesterday()) + DATE_SUFFIX;
         integrationResourceRequestDto.setAfter(after);
         if (!getLatest) {
-            final String before = df.format(now()) + DATE_SUFFIX;
+            final String before = df.format(now()); //  + DATE_SUFFIX;
             integrationResourceRequestDto.setBefore(before);
         }
     }

@@ -103,11 +103,15 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private Map<UUID, UserNotificationDTO> mapUserNotifications(final Map<String, IntegrationResourceDTO> updatedResourcesMap) {
+        LOG.info("MAP NOTIFICATIONS {}", updatedResourcesMap);
         final Map<UUID, UserNotificationDTO> userNotifications = new HashMap<>();
         final Set<UserDTO> users = userService.findAll();
+        LOG.info("FOUND {} USERS", users.size());
         for (final UserDTO user : users) {
+            LOG.info("USER {}", user.getId());
             if (SUBSCRIPTION_TYPE_DAILY.equalsIgnoreCase(user.getSubscriptionType())) {
                 final UserNotificationDTO userNotificationDto = mapUserNotificationResource(user, updatedResourcesMap);
+                LOG.info("NOTIFICATION {}", userNotificationDto.getTerminologyResources().size());
                 if (userNotificationDto != null) {
                     userNotifications.put(user.getId(), userNotificationDto);
                 }

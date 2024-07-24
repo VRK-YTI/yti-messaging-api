@@ -47,7 +47,9 @@ public class EmailServiceImpl implements EmailService {
 
     public void sendMail(final UUID userId,
                          final String message) {
+        LOG.info("SEND MAIL TO USER {}", userId);
         final String emailAddress = userLookupService.getUserEmailById(userId);
+        LOG.info("EMAIL", emailAddress);
         try {
             if (emailAddress != null && !emailAddress.endsWith("localhost")) {
                 LOG.info("Sending email to: " + userId);
