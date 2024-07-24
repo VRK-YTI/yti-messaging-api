@@ -66,7 +66,7 @@ public class NotificationServiceImpl implements NotificationService {
         this.messagingServiceProperties = messagingServiceProperties;
     }
 
-    @Scheduled(cron = "0 0 7 * * *", zone = "Europe/Helsinki")
+    @Scheduled(cron = "0 */5 * * * *", zone = "Europe/Helsinki")
     @Transactional
     public void sendAllNotifications() {
         LOG.info("Sending scheduled notifications!");
