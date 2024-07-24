@@ -111,7 +111,7 @@ public class NotificationServiceImpl implements NotificationService {
             LOG.info("USER {}", user.getId());
             if (SUBSCRIPTION_TYPE_DAILY.equalsIgnoreCase(user.getSubscriptionType())) {
                 final UserNotificationDTO userNotificationDto = mapUserNotificationResource(user, updatedResourcesMap);
-                LOG.info("NOTIFICATION {}", userNotificationDto.getTerminologyResources().size());
+                LOG.info("NOTIFICATION {}", userNotificationDto);
                 if (userNotificationDto != null) {
                     userNotifications.put(user.getId(), userNotificationDto);
                 }
@@ -128,8 +128,10 @@ public class NotificationServiceImpl implements NotificationService {
             final List<IntegrationResourceDTO> dataModelUpdates = new ArrayList<>();
             final List<IntegrationResourceDTO> terminologyUpdates = new ArrayList<>();
             final List<IntegrationResourceDTO> commentsUpdates = new ArrayList<>();
+            LOG.info("UPDATED", updatedResourcesMap);
             for (final ResourceDTO resource : resources) {
                 final String resourceUri = resource.getUri();
+                LOG.info("RESOURCE URI {}", resourceUri);
                 if (updatedResourcesMap.keySet().contains(resourceUri)) {
                     switch (resource.getApplication()) {
                         case APPLICATION_CODELIST:
