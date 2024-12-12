@@ -51,7 +51,6 @@ public class ContainerNameServiceImpl implements ContainerNameService {
         // fetchAndCachePrefLabelsForContainers(APPLICATION_DATAMODEL);
 
         fetchAndCachePrefLabelsForContainers(APPLICATION_TERMINOLOGY);
-        fetchAndCachePrefLabelsForContainers(APPLICATION_COMMENTS);
     }
 
     public void addPrefLabel(final IntegrationResourceDTO integrationResource) {

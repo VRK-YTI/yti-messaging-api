@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import fi.vm.yti.messaging.api.Meta;
 import fi.vm.yti.messaging.configuration.CodelistProperties;
-import fi.vm.yti.messaging.configuration.CommentsProperties;
 import fi.vm.yti.messaging.configuration.CustomObjectMapper;
 import fi.vm.yti.messaging.configuration.DataModelProperties;
 import fi.vm.yti.messaging.configuration.TerminologyProperties;
@@ -53,18 +52,15 @@ public class IntegrationServiceImpl implements IntegrationService {
     private final CodelistProperties codelistProperties;
     private final DataModelProperties dataModelProperties;
     private final TerminologyProperties terminologyProperties;
-    private final CommentsProperties commentsProperties;
     private final RestTemplate restTemplate;
 
     public IntegrationServiceImpl(final CodelistProperties codelistProperties,
                                   final DataModelProperties dataModelProperties,
                                   final TerminologyProperties terminologyProperties,
-                                  final CommentsProperties commentsProperties,
                                   final RestTemplate restTemplate) {
         this.codelistProperties = codelistProperties;
         this.dataModelProperties = dataModelProperties;
         this.terminologyProperties = terminologyProperties;
-        this.commentsProperties = commentsProperties;
         this.restTemplate = restTemplate;
     }
 
@@ -224,8 +220,6 @@ public class IntegrationServiceImpl implements IntegrationService {
                 return resolveIntegrationRequestUrl(dataModelProperties.getPublicUrl(), PATH_DATAMODEL_API, endPoint);
             case APPLICATION_TERMINOLOGY:
                 return resolveIntegrationRequestUrl(terminologyProperties.getPublicUrl(), PATH_TERMINOLOGY_API, endPoint);
-            case APPLICATION_COMMENTS:
-                return resolveIntegrationRequestUrl(commentsProperties.getPublicUrl(), PATH_COMMENTS_API, endPoint);
             default:
                 throw new YtiMessagingException(new ErrorModel(HttpStatus.NOT_ACCEPTABLE.value(), "Unknown applicationIdentifier: " + applicationIdentifier));
         }
