@@ -46,9 +46,10 @@ public class ContainerNameServiceImpl implements ContainerNameService {
     @Scheduled(cron = "0 0 0 * * *", zone = "Europe/Helsinki")
     public void refreshPrefLabels() {
         fetchAndCachePrefLabelsForContainers(APPLICATION_CODELIST);
-        if (!"awsdev".equals(messagingServiceProperties.getEnv())) {
-            fetchAndCachePrefLabelsForContainers(APPLICATION_DATAMODEL);
-        }
+
+        // TODO: Datamodel disabled, because v2 doesn't support integration API
+        // fetchAndCachePrefLabelsForContainers(APPLICATION_DATAMODEL);
+
         fetchAndCachePrefLabelsForContainers(APPLICATION_TERMINOLOGY);
         fetchAndCachePrefLabelsForContainers(APPLICATION_COMMENTS);
     }

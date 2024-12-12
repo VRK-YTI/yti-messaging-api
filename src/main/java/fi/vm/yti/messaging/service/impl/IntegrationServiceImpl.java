@@ -26,6 +26,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
+import fi.vm.yti.messaging.api.Meta;
 import fi.vm.yti.messaging.configuration.CodelistProperties;
 import fi.vm.yti.messaging.configuration.CommentsProperties;
 import fi.vm.yti.messaging.configuration.CustomObjectMapper;
@@ -76,6 +77,11 @@ public class IntegrationServiceImpl implements IntegrationService {
                                                            final Set<String> containerUris,
                                                            final boolean fetchDateRangeChanges,
                                                            final boolean getLatest) {
+        // TODO: Datamodel disabled, because v2 doesn't support integration API                                                           
+        if (applicationIdentifier.equals(APPLICATION_DATAMODEL)) {
+            LOG.info("Return empty container response for datamodel application");
+            return getEmptyResponse();
+        }                                                    
         final String requestUrl = resolveIntegrationContainersRequestUrl(applicationIdentifier);
         LOG.info("Fetching integration containers from: " + requestUrl);
         final String requestBody = createContainerRequestBody(containerUris, fetchDateRangeChanges, getLatest);
@@ -98,6 +104,11 @@ public class IntegrationServiceImpl implements IntegrationService {
                                                           final String containerUri,
                                                           final boolean fetchDateRangeChanges,
                                                           final boolean getLatest) {
+        // TODO: Datamodel disabled, because v2 doesn't support integration API
+        if (applicationIdentifier.equals(APPLICATION_DATAMODEL)) {
+            LOG.info("Return empty resource response for datamodel application");
+            return getEmptyResponse();
+        }
         final String requestUrl = resolveIntegrationResourcesRequestUrl(applicationIdentifier);
         LOG.debug("Fetching integration resources from: " + requestUrl);
         final String requestBody = createResourcesRequestBody(applicationIdentifier, containerUri, fetchDateRangeChanges, getLatest);
@@ -232,5 +243,15 @@ public class IntegrationServiceImpl implements IntegrationService {
 
     private String resolveIntegrationResourcesRequestUrl(final String applicationIdentifier) {
         return resolveIntegrationRequestUrl(applicationIdentifier, PATH_RESOURCES_API);
+    }
+
+    private IntegrationResponseDTO getEmptyResponse() {
+        IntegrationResponseDTO empty = new IntegrationResponseDTO();
+        Meta meta = new Meta();
+        meta.setResultCount(0);
+        meta.setTotalResults(0);
+        empty.setMeta(meta);
+        empty.setResults(new ArrayList<>());
+        return empty;
     }
 }
