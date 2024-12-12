@@ -123,7 +123,6 @@ public class NotificationServiceImpl implements NotificationService {
             final List<IntegrationResourceDTO> codeListUpdates = new ArrayList<>();
             final List<IntegrationResourceDTO> dataModelUpdates = new ArrayList<>();
             final List<IntegrationResourceDTO> terminologyUpdates = new ArrayList<>();
-            final List<IntegrationResourceDTO> commentsUpdates = new ArrayList<>();
             for (final ResourceDTO resource : resources) {
                 final String resourceUri = resource.getUri();
                 if (updatedResourcesMap.keySet().contains(resourceUri)) {
@@ -137,9 +136,6 @@ public class NotificationServiceImpl implements NotificationService {
                         case APPLICATION_TERMINOLOGY:
                             terminologyUpdates.add(updatedResourcesMap.get(resourceUri));
                             break;
-                        case APPLICATION_COMMENTS:
-                            commentsUpdates.add(updatedResourcesMap.get(resourceUri));
-                            break;
                         default:
                             LOG.info("Unknown application type: " + resource.getApplication());
                     }
@@ -148,10 +144,9 @@ public class NotificationServiceImpl implements NotificationService {
             Collections.sort(codeListUpdates);
             Collections.sort(dataModelUpdates);
             Collections.sort(terminologyUpdates);
-            Collections.sort(commentsUpdates);
             UserNotificationDTO userNotificationDto = null;
-            if (!codeListUpdates.isEmpty() || !dataModelUpdates.isEmpty() || !terminologyUpdates.isEmpty() || !commentsUpdates.isEmpty()) {
-                userNotificationDto = new UserNotificationDTO(codeListUpdates, dataModelUpdates, terminologyUpdates, commentsUpdates);
+            if (!codeListUpdates.isEmpty() || !dataModelUpdates.isEmpty() || !terminologyUpdates.isEmpty()) {
+                userNotificationDto = new UserNotificationDTO(codeListUpdates, dataModelUpdates, terminologyUpdates);
             }
             return userNotificationDto;
         }
@@ -178,7 +173,6 @@ public class NotificationServiceImpl implements NotificationService {
         final List<IntegrationResourceDTO> terminologyUpdates = userNotificationDto.getTerminologyResources();
         final List<IntegrationResourceDTO> codelistUpdates = userNotificationDto.getCodelistResources();
         final List<IntegrationResourceDTO> datamodelUpdates = userNotificationDto.getDatamodelResouces();
-        final List<IntegrationResourceDTO> commentsUpdates = userNotificationDto.getCommentsResources();
         if (!terminologyUpdates.isEmpty()) {
             builder.append("<h3>Sanastot</h3>");
             addContainerUpdates(APPLICATION_TERMINOLOGY, builder, terminologyUpdates);
@@ -190,10 +184,6 @@ public class NotificationServiceImpl implements NotificationService {
         if (!datamodelUpdates.isEmpty()) {
             builder.append("<h3>Tietomallit</h3>");
             addContainerUpdates(APPLICATION_DATAMODEL, builder, datamodelUpdates);
-        }
-        if (!commentsUpdates.isEmpty()) {
-            builder.append("<h3>Kommentit</h3>");
-            addContainerUpdates(APPLICATION_COMMENTS, builder, commentsUpdates);
         }
         builder.append("<br/>");
         builder.append("<br/>");
@@ -285,10 +275,6 @@ public class NotificationServiceImpl implements NotificationService {
                 return "tietokomponenttikirjaston";
             case TYPE_PROFILE:
                 return "soveltamisprofiilin";
-            case TYPE_COMMENTROUND:
-                return "kommentointikierroksen";
-            case TYPE_COMMENTTHREAD:
-                return "kommentointiketjun";
             default:
                 return "aineiston";
         }
@@ -363,12 +349,6 @@ public class NotificationServiceImpl implements NotificationService {
             } else if (modified != null && (modified.after(modifiedComparisonDate) || modified.equals(modifiedComparisonDate))) {
                 appendInformationChanged(builder, type, false);
             }
-        } else if (APPLICATION_COMMENTS.equalsIgnoreCase(applicationIdentifier) && TYPE_COMMENTTHREAD.equalsIgnoreCase(type)) {
-            final Date contentModified = resource.getContentModified();
-            final Date contentModifiedComparisonDate = createAfterDateForModifiedComparison();
-            if (contentModified != null && (contentModified.after(contentModifiedComparisonDate) || contentModified.equals(contentModifiedComparisonDate))) {
-                builder.append(" tietosisältöön on tullut uusia kommentteja");
-            }
         }
         if (wrapToList) {
             builder.append("</li>");
@@ -376,7 +356,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private boolean isContainerType(final String type) {
-        return TYPE_CODELIST.equalsIgnoreCase(type) || TYPE_COMMENTROUND.equalsIgnoreCase(type) || TYPE_LIBRARY.equalsIgnoreCase(type) || TYPE_PROFILE.equalsIgnoreCase(type) || TYPE_TERMINOLOGY.equalsIgnoreCase(type);
+        return TYPE_CODELIST.equalsIgnoreCase(type) || TYPE_LIBRARY.equalsIgnoreCase(type) || TYPE_PROFILE.equalsIgnoreCase(type) || TYPE_TERMINOLOGY.equalsIgnoreCase(type);
     }
 
     private String getPrefLabelValueForEmail(final Map<String, String> prefLabel) {
@@ -446,7 +426,6 @@ public class NotificationServiceImpl implements NotificationService {
             addUpdatedContainersForApplication(APPLICATION_DATAMODEL, updatedResources, userId);
         }
         addUpdatedContainersForApplication(APPLICATION_TERMINOLOGY, updatedResources, userId);
-        addUpdatedContainersForApplication(APPLICATION_COMMENTS, updatedResources, userId);
         return updatedResources;
     }
 
